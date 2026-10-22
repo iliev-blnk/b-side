@@ -1,0 +1,364 @@
+{
+  "piano": [
+    {
+      "note": "B1",
+      "file": "piano-B1.mp3"
+    },
+    {
+      "note": "C#2",
+      "file": "piano-Cs2.mp3"
+    },
+    {
+      "note": "D#2",
+      "file": "piano-Ds2.mp3"
+    },
+    {
+      "note": "F2",
+      "file": "piano-F2.mp3"
+    },
+    {
+      "note": "G2",
+      "file": "piano-G2.mp3"
+    },
+    {
+      "note": "A2",
+      "file": "piano-A2.mp3"
+    },
+    {
+      "note": "B2",
+      "file": "piano-B2.mp3"
+    },
+    {
+      "note": "C#3",
+      "file": "piano-Cs3.mp3"
+    },
+    {
+      "note": "D#3",
+      "file": "piano-Ds3.mp3"
+    },
+    {
+      "note": "F3",
+      "file": "piano-F3.mp3"
+    },
+    {
+      "note": "G3",
+      "file": "piano-G3.mp3"
+    },
+    {
+      "note": "A3",
+      "file": "piano-A3.mp3"
+    },
+    {
+      "note": "B3",
+      "file": "piano-B3.mp3"
+    },
+    {
+      "note": "C#4",
+      "file": "piano-Cs4.mp3"
+    },
+    {
+      "note": "D#4",
+      "file": "piano-Ds4.mp3"
+    },
+    {
+      "note": "F4",
+      "file": "piano-F4.mp3"
+    },
+    {
+      "note": "G4",
+      "file": "piano-G4.mp3"
+    },
+    {
+      "note": "A4",
+      "file": "piano-A4.mp3"
+    },
+    {
+      "note": "B4",
+      "file": "piano-B4.mp3"
+    },
+    {
+      "note": "C#5",
+      "file": "piano-Cs5.mp3"
+    },
+    {
+      "note": "D#5",
+      "file": "piano-Ds5.mp3"
+    },
+    {
+      "note": "F5",
+      "file": "piano-F5.mp3"
+    },
+    {
+      "note": "G5",
+      "file": "piano-G5.mp3"
+    },
+    {
+      "note": "A5",
+      "file": "piano-A5.mp3"
+    },
+    {
+      "note": "B5",
+      "file": "piano-B5.mp3"
+    },
+    {
+      "note": "C#6",
+      "file": "piano-Cs6.mp3"
+    }
+  ],
+  "keys": [
+    {
+      "note": "C2",
+      "file": "keys-C2.mp3"
+    },
+    {
+      "note": "E2",
+      "file": "keys-E2.mp3"
+    },
+    {
+      "note": "G#2",
+      "file": "keys-Gs2.mp3"
+    },
+    {
+      "note": "C3",
+      "file": "keys-C3.mp3"
+    },
+    {
+      "note": "E3",
+      "file": "keys-E3.mp3"
+    },
+    {
+      "note": "G#3",
+      "file": "keys-Gs3.mp3"
+    },
+    {
+      "note": "C4",
+      "file": "keys-C4.mp3"
+    },
+    {
+      "note": "E4",
+      "file": "keys-E4.mp3"
+    },
+    {
+      "note": "G#4",
+      "file": "keys-Gs4.mp3"
+    },
+    {
+      "note": "C5",
+      "file": "keys-C5.mp3"
+    },
+    {
+      "note": "E5",
+      "file": "keys-E5.mp3"
+    },
+    {
+      "note": "G#5",
+      "file": "keys-Gs5.mp3"
+    },
+    {
+      "note": "C6",
+      "file": "keys-C6.mp3"
+    }
+  ],
+  "sax": [
+    {
+      "note": "G#2",
+      "file": "sax-Gs2.mp3"
+    },
+    {
+      "note": "A#2",
+      "file": "sax-As2.mp3"
+    },
+    {
+      "note": "C3",
+      "file": "sax-C3.mp3"
+    },
+    {
+      "note": "D3",
+      "file": "sax-D3.mp3"
+    },
+    {
+      "note": "E3",
+      "file": "sax-E3.mp3"
+    },
+    {
+      "note": "F#3",
+      "file": "sax-Fs3.mp3"
+    },
+    {
+      "note": "G#3",
+      "file": "sax-Gs3.mp3"
+    },
+    {
+      "note": "A#3",
+      "file": "sax-As3.mp3"
+    },
+    {
+      "note": "C4",
+      "file": "sax-C4.mp3"
+    },
+    {
+      "note": "D4",
+      "file": "sax-D4.mp3"
+    },
+    {
+      "note": "E4",
+      "file": "sax-E4.mp3"
+    },
+    {
+      "note": "F#4",
+      "file": "sax-Fs4.mp3"
+    },
+    {
+      "note": "G#4",
+      "file": "sax-Gs4.mp3"
+    },
+    {
+      "note": "A#4",
+      "file": "sax-As4.mp3"
+    },
+    {
+      "note": "C5",
+      "file": "sax-C5.mp3"
+    },
+    {
+      "note": "D5",
+      "file": "sax-D5.mp3"
+    },
+    {
+      "note": "E5",
+      "file": "sax-E5.mp3"
+    },
+    {
+      "note": "F#5",
+      "file": "sax-Fs5.mp3"
+    }
+  ],
+  "vibes": [
+    {
+      "note": "F3",
+      "file": "vibes-F3.mp3"
+    },
+    {
+      "note": "A3",
+      "file": "vibes-A3.mp3"
+    },
+    {
+      "note": "C4",
+      "file": "vibes-C4.mp3"
+    },
+    {
+      "note": "E4",
+      "file": "vibes-E4.mp3"
+    },
+    {
+      "note": "G4",
+      "file": "vibes-G4.mp3"
+    },
+    {
+      "note": "B4",
+      "file": "vibes-B4.mp3"
+    },
+    {
+      "note": "D5",
+      "file": "vibes-D5.mp3"
+    },
+    {
+      "note": "F5",
+      "file": "vibes-F5.mp3"
+    },
+    {
+      "note": "A5",
+      "file": "vibes-A5.mp3"
+    },
+    {
+      "note": "C6",
+      "file": "vibes-C6.mp3"
+    },
+    {
+      "note": "E6",
+      "file": "vibes-E6.mp3"
+    }
+  ],
+  "harmonica": [
+    {
+      "note": "C4",
+      "file": "harmonica-C4.mp3"
+    },
+    {
+      "note": "E4",
+      "file": "harmonica-E4.mp3"
+    },
+    {
+      "note": "C5",
+      "file": "harmonica-C5.mp3"
+    },
+    {
+      "note": "E5",
+      "file": "harmonica-E5.mp3"
+    },
+    {
+      "note": "G5",
+      "file": "harmonica-G5.mp3"
+    },
+    {
+      "note": "C6",
+      "file": "harmonica-C6.mp3"
+    }
+  ],
+  "hat": [
+    {
+      "note": "closed",
+      "file": "hat-closed.mp3",
+      "source": "HiHat_HitC_v2_rr1_Mid.wav"
+    },
+    {
+      "note": "closed2",
+      "file": "hat-closed2.mp3",
+      "source": "HiHat_HitC_v2_rr2_Mid.wav"
+    },
+    {
+      "note": "ghost",
+      "file": "hat-ghost.mp3",
+      "source": "HiHat_HitC_v1_rr1_Mid.wav"
+    },
+    {
+      "note": "open",
+      "file": "hat-open.mp3",
+      "source": "HiHat_HitLoose_rr1_Mid.wav"
+    }
+  ],
+  "snare": [
+    {
+      "note": "hit",
+      "file": "snare-hit.mp3",
+      "source": "Snare2_HitSN_v5_rr1_Mid.wav"
+    },
+    {
+      "note": "hit2",
+      "file": "snare-hit2.mp3",
+      "source": "Snare2_HitSN_v5_rr2_Mid.wav"
+    },
+    {
+      "note": "ghost",
+      "file": "snare-ghost.mp3",
+      "source": "Snare2_taps_v4_rr1_Mid.wav"
+    },
+    {
+      "note": "rim",
+      "file": "snare-rim.mp3",
+      "source": "Snare2_stick_v1_rr1_Mid.wav"
+    }
+  ],
+  "shaker": [
+    {
+      "note": "down",
+      "file": "shaker-down.mp3",
+      "source": "Mid_ShakerDouble_Down_rr1.wav"
+    },
+    {
+      "note": "up",
+      "file": "shaker-up.mp3",
+      "source": "Mid_ShakerDouble_Up_rr1.wav"
+    }
+  ]
+}
