@@ -2,7 +2,11 @@
 import { chromium } from "playwright-core";
 import { build, preview } from "vite";
 
-export async function openSite() {
+/**
+ * `now` fakes the clock (an ISO time) so the shelf can be tested on any night.
+ * `newPage` opens another tab on the same build, e.g. with reduced motion or a #day link.
+ */
+export async function openSite({ now } = {}) {
   await build({ logLevel: "warn" });
   const server = await preview({ preview: { port: 0, strictPort: false }, logLevel: "warn" });
   const url = server.resolvedUrls.local[0];
@@ -10,11 +14,17 @@ export async function openSite() {
     executablePath: process.env.CHROMIUM ?? "/usr/bin/chromium",
     args: ["--autoplay-policy=no-user-gesture-required"],
   });
-  const page = await browser.newPage();
-  page.on("pageerror", (e) => console.error("page error:", e.message));
-  await page.goto(url);
+  const newPage = async ({ reducedMotion, hash = "" } = {}) => {
+    const page = await browser.newPage({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
+    if (now) await page.clock.setFixedTime(new Date(now));
+    page.on("pageerror", (e) => console.error("page error:", e.message));
+    await page.goto(url + hash);
+    return page;
+  };
+  const page = await newPage();
   return {
     page,
+    newPage,
     async close() {
       await browser.close();
       await new Promise((r) => server.httpServer.close(r));

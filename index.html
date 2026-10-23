@@ -3,42 +3,94 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>b-side · sound check</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;600;800&display=swap" rel="stylesheet" />
+    <title>b-side</title>
+    <meta name="description" content="One record pressed every night: a sleeve, a minute of jazz-hop and a cut-paper title sequence, all made from the date." />
+    <meta property="og:title" content="b-side" />
+    <meta property="og:description" content="One record pressed every night: a sleeve, a minute of jazz-hop and a cut-paper title sequence, all made from the date." />
+    <meta property="og:image" content="https://iliev-blnk.github.io/b-side/og.png" />
+    <meta property="og:url" content="https://iliev-blnk.github.io/b-side/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0e0d0c" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230e0d0c'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23c8321f'/%3E%3Ccircle cx='16' cy='16' r='1.2' fill='%230e0d0c'/%3E%3C/svg%3E" />
     <style>
-      :root { --ink: #0d0c0b; --paper: #e9e3d6; --red: #c8321f; --yellow: #efb417; --blue: #1d4a9c; }
+      :root {
+        --ink: #0e0d0c;
+        --bone: #e9e3d6;
+        --dim: #9a9387;
+        --line: #2b2825;
+        --red: #c8321f;
+        color-scheme: dark;
+      }
       * { box-sizing: border-box; }
-      body { margin: 0; min-height: 100vh; background: var(--ink); color: var(--paper); font-family: Jost, system-ui, sans-serif; display: grid; place-items: center; padding: 16px; }
-      main { width: min(640px, 100%); }
-      h1 { font-weight: 800; font-size: clamp(64px, 16vw, 128px); line-height: 0.85; margin: 0 0 32px; letter-spacing: -0.02em; }
-      .moods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-      button { font: inherit; font-weight: 600; font-size: 20px; border: 0; padding: 22px 12px; cursor: pointer; color: var(--ink); }
-      button[data-mood="noir"] { background: var(--paper); }
-      button[data-mood="chase"] { background: var(--yellow); }
-      button[data-mood="sad"] { background: var(--blue); color: var(--paper); }
-      button[aria-pressed="true"] { outline: 4px solid var(--red); outline-offset: -4px; }
-      .row { display: flex; gap: 8px; margin-top: 8px; }
-      input { flex: 1; min-width: 0; font: inherit; font-size: 18px; background: transparent; color: var(--paper); border: 2px solid #3a3631; padding: 10px 12px; }
-      .row button { background: #3a3631; color: var(--paper); font-size: 16px; padding: 10px 16px; }
-      #info { min-height: 1.5em; color: #a49d90; margin-top: 20px; }
+      html { background: var(--ink); }
+      body { margin: 0; background: var(--ink); color: var(--bone); font-family: "Jost Variable", Jost, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      main { width: min(1120px, 100%); margin: 0 auto; padding: 40px 16px 80px; }
+      header h1 { font-weight: 800; font-size: clamp(56px, 11vw, 120px); line-height: 0.8; letter-spacing: -0.02em; margin: 0; }
+      header p { margin: 18px 0 0; max-width: 34em; color: var(--dim); font-size: 18px; line-height: 1.45; }
+
+      .today { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 64px); align-items: center; margin: clamp(40px, 7vw, 88px) 0 clamp(56px, 8vw, 104px); }
+      .today .sleeve { width: min(100%, 560px); }
+      .today .meta h2 { font-size: clamp(30px, 4.4vw, 52px); line-height: 1; margin: 0; font-weight: 800; letter-spacing: -0.01em; }
+      .today .meta p { color: var(--dim); margin: 14px 0 0; font-size: 17px; line-height: 1.5; }
+      .today .meta .band { color: var(--bone); }
+      .play { margin-top: 28px; font: inherit; font-weight: 700; font-size: 18px; border: 0; background: var(--bone); color: var(--ink); padding: 14px 26px 14px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 12px; }
+      .play::before { content: ""; width: 0; height: 0; border-left: 12px solid currentColor; border-top: 8px solid transparent; border-bottom: 8px solid transparent; }
+      .play:hover { background: #fff; }
+      .missing { color: var(--dim); font-size: 18px; margin: 64px 0; }
+
+      .sleeve { position: relative; display: block; aspect-ratio: 1; border: 0; padding: 0; background: none; cursor: pointer; width: 100%; }
+      .sleeve canvas { position: relative; z-index: 1; width: 100%; height: 100%; display: block; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55); }
+      .sleeve .disc { position: absolute; inset: 3% 3% 3% 3%; border-radius: 50%; background: repeating-radial-gradient(circle, #151413 0 2px, #1d1b19 2px 4px); transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1); transform: translateX(14%); }
+      .sleeve .disc::after { content: ""; position: absolute; inset: 33%; border-radius: 50%; background: var(--label, var(--red)); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.3); }
+      .sleeve:hover .disc, .sleeve:focus-visible .disc { transform: translateX(26%); }
+      .sleeve:focus-visible { outline: 3px solid var(--bone); outline-offset: 6px; }
+
+      .shelf h3 { font-size: 15px; font-weight: 600; color: var(--dim); margin: 0 0 20px; letter-spacing: 0.02em; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 36px 24px; }
+      .grid figure { margin: 0; }
+      .grid .disc { display: none; }
+      .grid figcaption { margin-top: 12px; font-size: 14px; color: var(--dim); line-height: 1.35; }
+      .grid figcaption b { display: block; font-weight: 600; }
+      .grid figcaption a { color: var(--bone); text-decoration: none; }
+      .grid figcaption a:hover { text-decoration: underline; }
+
+      footer { margin-top: 96px; color: var(--dim); font-size: 14px; line-height: 1.6; }
+      footer a { color: var(--bone); }
+
+      .player { position: fixed; inset: 0; background: #000; z-index: 10; display: none; }
+      .player.on { display: block; }
+      .player canvas { width: 100%; height: 100%; display: block; }
+      .player .still { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; }
+      .player .still canvas { width: min(80vmin, 560px); height: auto; aspect-ratio: 1; }
+      .player .close { position: absolute; top: 14px; right: 14px; z-index: 2; font: inherit; font-size: 15px; font-weight: 600; background: rgba(14, 13, 12, 0.7); color: var(--bone); border: 0; padding: 10px 16px; cursor: pointer; }
+      .player .wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); font-size: 16px; }
+
+      @media (max-width: 760px) {
+        .today { grid-template-columns: 1fr; }
+        .today .sleeve { width: 86%; }
+      }
     </style>
   </head>
   <body>
     <main>
-      <h1>b-side</h1>
-      <div class="moods">
-        <button data-mood="noir">noir</button>
-        <button data-mood="chase">chase</button>
-        <button data-mood="sad">sad</button>
-      </div>
-      <div class="row">
-        <input id="seed" aria-label="date" spellcheck="false" />
-        <button id="next">next day</button>
-        <button id="stop">stop</button>
-      </div>
-      <p id="info"></p>
+      <header>
+        <h1>b-side</h1>
+        <p>One record pressed every night. Each has a sleeve, a minute of jazz-hop and a cut-paper title sequence, all made from the date.</p>
+      </header>
+      <section id="today"></section>
+      <section class="shelf" id="shelf" hidden>
+        <h3>Earlier</h3>
+        <div class="grid" id="grid"></div>
+      </section>
+      <footer>
+        Made in Chișinău by <a href="https://ilyushavb.pages.dev">Ilie Beleniuc</a>. Samples from the
+        <a href="https://github.com/sgossner/VCSL">Versilian Community Sample Library</a> (CC0).
+        <a href="https://github.com/iliev-blnk/b-side">Source</a>.
+      </footer>
     </main>
-    <script type="module" src="/src/spike.ts"></script>
+    <div class="player" id="player" role="dialog" aria-label="Now playing">
+      <button class="close" id="close">close</button>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
