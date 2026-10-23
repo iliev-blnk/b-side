@@ -55,15 +55,15 @@ function rotate([x, y]: Pt, cx: number, cy: number, a: number): Pt {
 }
 
 /** Splits each edge into short pieces and pushes every point in or out a little: a scissor cut. */
-function cut(pts: Pt[], id: string, amp: number, closed = true): Pt[] {
+function cut(pts: Pt[], id: string, amp: number, seg = 28): Pt[] {
   const r = rng(`cut/${id}`);
   const out: Pt[] = [];
-  const n = closed ? pts.length : pts.length - 1;
+  const n = pts.length;
   for (let i = 0; i < n; i++) {
     const [x0, y0] = pts[i]!;
     const [x1, y1] = pts[(i + 1) % pts.length]!;
     const len = Math.hypot(x1 - x0, y1 - y0);
-    const steps = Math.max(1, Math.round(len / 28));
+    const steps = Math.max(1, Math.round(len / seg));
     const nx = -(y1 - y0) / (len || 1);
     const ny = (x1 - x0) / (len || 1);
     // a scissor line drifts slowly off true, it does not zigzag
@@ -101,7 +101,8 @@ function trace(ctx: CanvasRenderingContext2D, pts: Pt[]) {
   ctx.closePath();
 }
 
-function path(s: Shape, amp: number): Path2D | null {
+/** A shape's outline with its scissor edge, in the shape's own units (`seg`: how long a straight cut runs). */
+export function shapePath(s: Shape, amp: number, seg = 28): Path2D | null {
   const p = new Path2D();
   const ctx = { moveTo: p.moveTo.bind(p), lineTo: p.lineTo.bind(p), closePath: p.closePath.bind(p) } as CanvasRenderingContext2D;
   switch (s.kind) {
@@ -114,7 +115,7 @@ function path(s: Shape, amp: number): Path2D | null {
         [s.x + s.w, s.y + s.h],
         [s.x, s.y + s.h],
       ].map((q) => rotate(q as Pt, cx, cy, s.rot ?? 0));
-      trace(ctx, cut(corners, s.id, amp));
+      trace(ctx, cut(corners, s.id, amp, seg));
       return p;
     }
     case "circle":
@@ -125,7 +126,7 @@ function path(s: Shape, amp: number): Path2D | null {
       trace(ctx, circlePts(s.x, s.y, s.inner, `${s.id}/in`, amp).reverse());
       return p;
     case "poly":
-      trace(ctx, cut(s.pts, s.id, amp));
+      trace(ctx, cut(s.pts, s.id, amp, seg));
       return p;
     case "sector": {
       const outer = circlePts(s.x, s.y, s.r1, s.id, amp, s.a0, s.a1);
@@ -213,7 +214,7 @@ export function draw(sheet: Sheet, shapes: Shape[], frame: Frame) {
     ctx.fillStyle = PAPER[s.color];
     if (s.kind === "text") drawText(sheet, s, frame);
     else {
-      const p = path(s, amp);
+      const p = shapePath(s, amp);
       if (p) ctx.fill(p, "evenodd");
     }
     shadowOff(ctx);
@@ -223,7 +224,7 @@ export function draw(sheet: Sheet, shapes: Shape[], frame: Frame) {
 
 let grainTile: HTMLCanvasElement | OffscreenCanvas | null = null;
 
-function grain(): HTMLCanvasElement | OffscreenCanvas {
+export function grain(): HTMLCanvasElement | OffscreenCanvas {
   if (grainTile) return grainTile;
   const size = 256;
   const c = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(size, size) : Object.assign(document.createElement("canvas"), { width: size, height: size });
