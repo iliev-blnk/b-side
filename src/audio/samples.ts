@@ -1,5 +1,4 @@
 import { parseNote } from "../music/theory.ts";
-import type { Part } from "../music/types.ts";
 
 export type Manifest = Record<string, { note: string; file: string }[]>;
 
@@ -37,7 +36,7 @@ export function indexPack(manifest: Manifest): PackIndex {
  * The sample to play for a note: the nearest recorded pitch, and the playback rate that bends it
  * there (distance is in semitones, positive when the sample is played faster). Drums look up by variant.
  */
-export function nearestSample(index: PackIndex, part: Part, note: number | string): { file: string; rate: number; distance: number } {
+export function nearestSample(index: PackIndex, part: string, note: number | string): { file: string; rate: number; distance: number } {
   const entries = index[part];
   if (!entries?.length) throw new Error(`no samples for ${part}`);
   if (typeof note === "string") {
@@ -53,10 +52,13 @@ export function nearestSample(index: PackIndex, part: Part, note: number | strin
   return { file: best.file, rate: 2 ** (distance / 12), distance };
 }
 
-export async function loadPack(ctx: BaseAudioContext, base: string): Promise<Pack> {
+/** Loads the samples for `parts` (every part in the manifest when omitted). */
+export async function loadPack(ctx: BaseAudioContext, base: string, parts?: readonly string[]): Promise<Pack> {
   const manifest: Manifest = await (await fetch(`${base}manifest.json`)).json();
   const index = indexPack(manifest);
-  const files = Object.values(index).flatMap((es) => es.map((e) => e.file));
+  const files = Object.entries(index)
+    .filter(([inst]) => !parts || parts.includes(inst))
+    .flatMap(([, es]) => es.map((e) => e.file));
   const buffers = new Map<string, AudioBuffer>();
   await Promise.all(
     files.map(async (f) => {
@@ -65,4 +67,15 @@ export async function loadPack(ctx: BaseAudioContext, base: string): Promise<Pac
     }),
   );
   return { index, buffers };
+}
+
+/** Adds the samples for more parts to a loaded pack. */
+export async function extendPack(ctx: BaseAudioContext, base: string, pack: Pack, parts: readonly string[]): Promise<void> {
+  const files = parts.flatMap((p) => pack.index[p]?.map((e) => e.file) ?? []).filter((f) => !pack.buffers.has(f));
+  await Promise.all(
+    files.map(async (f) => {
+      const data = await (await fetch(`${base}${f}`)).arrayBuffer();
+      pack.buffers.set(f, await ctx.decodeAudioData(data));
+    }),
+  );
 }

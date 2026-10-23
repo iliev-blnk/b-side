@@ -7,6 +7,15 @@ export interface Master {
   /** Vinyl crackle joins after the tone shaping, so it stays crisp. */
   crackle: AudioNode;
   output: AudioNode;
+  /** A lowpass at the very front, for filtered intros and breakdowns (wide open by default). */
+  filter: BiquadFilterNode;
+  /** After the compressor: fades and the tape stop pull this down. */
+  fader: GainNode;
+}
+
+export interface Room {
+  seconds: number;
+  wet: number;
 }
 
 const CUTOFF: Record<Mood, number> = { noir: 5000, chase: 7000, sad: 4200 };
@@ -24,7 +33,7 @@ function roomIR(ctx: BaseAudioContext, seconds: number): AudioBuffer {
       const t = i / sr;
       // darker as it decays, like a small wooden room
       lp += (0.6 - 0.45 * (t / seconds)) * (r.next() * 2 - 1 - lp);
-      d[i] = lp * Math.exp(-t * 4.2);
+      d[i] = lp * Math.exp(-t * (6.9 / seconds));
     }
   }
   return buf;
@@ -42,12 +51,18 @@ function tapeCurve(drive: number): Float32Array<ArrayBuffer> {
 }
 
 /**
- * bus → lowpass → tape saturation → wow/flutter → small room → compressor → output.
- * Built from standard nodes, so it runs the same in an OfflineAudioContext.
+ * bus → section filter → lowpass → tape saturation → wow/flutter → room → compressor → fader → output.
+ * Built from standard nodes, so it runs the same in an OfflineAudioContext. Each style plays in its
+ * own room: a dry booth for boom-bap, a long hall for the ballad.
  */
-export function createMaster(ctx: BaseAudioContext, mood: Mood): Master {
+export function createMaster(ctx: BaseAudioContext, mood: Mood, space: Room = { seconds: 1.6, wet: 0.18 }): Master {
   const input = ctx.createGain();
   input.gain.value = 0.7;
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = 20000;
+  filter.Q.value = 0.9;
 
   const highpass = ctx.createBiquadFilter();
   highpass.type = "highpass";
@@ -72,9 +87,9 @@ export function createMaster(ctx: BaseAudioContext, mood: Mood): Master {
   lfo.start();
 
   const room = ctx.createConvolver();
-  room.buffer = roomIR(ctx, 1.6);
+  room.buffer = roomIR(ctx, space.seconds);
   const wet = ctx.createGain();
-  wet.gain.value = 0.18;
+  wet.gain.value = space.wet;
 
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -18;
@@ -85,13 +100,14 @@ export function createMaster(ctx: BaseAudioContext, mood: Mood): Master {
   const crackle = ctx.createGain();
   crackle.gain.value = 10 ** (CRACKLE_DB[mood] / 20);
 
+  const fader = ctx.createGain();
   const output = ctx.createGain();
   output.gain.value = 0.8;
 
-  input.connect(highpass).connect(lowpass).connect(sat).connect(wow);
+  input.connect(filter).connect(highpass).connect(lowpass).connect(sat).connect(wow);
   wow.connect(comp);
   wow.connect(room).connect(wet).connect(comp);
-  comp.connect(output);
+  comp.connect(fader).connect(output);
   crackle.connect(output);
-  return { input, crackle, output };
+  return { input, crackle, output, filter, fader };
 }

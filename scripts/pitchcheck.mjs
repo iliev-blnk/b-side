@@ -74,11 +74,16 @@ function magnitude(x, start, size, f) {
  * real energy next to the harmonics of f, the note is really f/2.
  */
 function pitch(x, start, size) {
-  const f = yin(x, start, size);
+  let f = yin(x, start, size);
+  // ...or slip an octave low when the period doubles; then there is nothing at f itself
+  // (low strings legitimately have a weak fundamental, so only above 150 Hz)
+  while (f > 150 && magnitude(x, start, size, f) < 0.05 * magnitude(x, start, size, 2 * f)) f *= 2;
   const sum = (fs) => fs.reduce((t, h) => t + magnitude(x, start, size, h), 0);
   const odd = sum([f / 2, (3 * f) / 2, (5 * f) / 2]);
   const own = sum([f, 2 * f, 3 * f]);
-  return odd > 0.1 * own ? f / 2 : f;
+  // a plucked bass string has noise between its harmonics, so the subharmonic itself must be there too
+  const sub = f / 2 >= 40 && magnitude(x, start, size, f / 2) > 0.15 * magnitude(x, start, size, f);
+  return odd > 0.1 * own && sub ? f / 2 : f;
 }
 
 const manifest = JSON.parse(readFileSync(join(DIR, "manifest.json"), "utf8"));
@@ -87,7 +92,8 @@ let total = 0;
 for (const [inst, samples] of Object.entries(manifest)) {
   for (const s of samples) {
     const want = midi(s.note);
-    if (want === null) continue;
+    // above 2 kHz the estimator cannot follow (the top of the glockenspiel)
+    if (want === null || want > 95) continue;
     total++;
     const x = pcm(join(DIR, s.file));
     // median over three windows: struck instruments are bright at the attack and settle later

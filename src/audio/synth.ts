@@ -96,3 +96,34 @@ export function crackleBuffer(ctx: BaseAudioContext, seconds: number, seed: numb
   }
   return buf;
 }
+
+/**
+ * Brushes: a sweep is noise swished across the head (it swells and fades over most of a second,
+ * bright in the middle); a tap is a short, dry slap.
+ */
+export function brushBuffer(ctx: BaseAudioContext, kind: "sweep" | "tap"): AudioBuffer {
+  const sr = ctx.sampleRate;
+  const seconds = kind === "sweep" ? 0.7 : 0.18;
+  const buf = ctx.createBuffer(1, Math.floor(sr * seconds), sr);
+  const d = buf.getChannelData(0);
+  const r = rng(`brush/${kind}`);
+  let lp = 0;
+  let hp = 0;
+  for (let i = 0; i < d.length; i++) {
+    const t = i / sr;
+    const n = r.next() * 2 - 1;
+    if (kind === "sweep") {
+      const env = Math.sin(Math.PI * Math.min(1, t / seconds)) ** 1.5;
+      const bright = 0.25 + 0.5 * env;
+      lp += bright * (n - lp);
+      hp += 0.02 * (lp - hp);
+      d[i] = (lp - hp) * env;
+    } else {
+      lp += 0.5 * (n - lp);
+      hp += 0.05 * (lp - hp);
+      d[i] = (lp - hp) * Math.exp(-t * 38) + Math.sin(2 * Math.PI * 190 * t) * Math.exp(-t * 60) * 0.3;
+    }
+  }
+  normalize(d, 0.7);
+  return buf;
+}

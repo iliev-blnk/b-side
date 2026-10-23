@@ -1,18 +1,21 @@
-// Prints the level of each part on its own, through the full chain (without crackle masking it much).
-// usage: node scripts/stems.mjs [seed]
+// Balances the mix: renders each group of parts of a track alone and prints its level.
+// usage: node scripts/stems.mjs <date> <mood> <track 1-3>
 import { openSite } from "./browser.mjs";
 
-const seed = process.argv[2] ?? "2026-10-23";
+const [date = "2026-10-23", mood = "noir", n = "1"] = process.argv.slice(2);
+const GROUPS = {
+  drums: ["kick", "snare", "hat", "ride", "crash", "tom", "shaker", "conga", "bongo", "clave", "brush"],
+  bass: ["bass"],
+  keys: ["piano", "keys"],
+  lead: ["sax", "trumpet", "trombone", "flute", "clarinet", "vibes", "harmonica"],
+  strings: ["strings"],
+  colour: ["glock", "marimba"],
+};
 const site = await openSite();
 try {
-  for (const mood of ["noir", "chase", "sad"]) {
-    const parts = ["kick", "snare", "hat", "shaker", "bass", "keys", "piano", "sax", "vibes", "harmonica"];
-    const row = [];
-    for (const p of parts) {
-      const r = await site.page.evaluate(([s, m, p]) => window.__render(s, m, "./samples/", [p]).then((x) => ({ peakDb: x.peakDb, rmsDb: x.rmsDb })), [seed, mood, p]);
-      if (r.peakDb > -60) row.push(`${p} ${r.rmsDb.toFixed(0)}/${r.peakDb.toFixed(0)}`);
-    }
-    console.log(`${mood}: ${row.join("  ")}`);
+  for (const [name, parts] of Object.entries(GROUPS)) {
+    const r = await site.page.evaluate(([d, m, k, o]) => window.__renderTrack(d, m, k, "./samples/", o).then((x) => ({ ...x, wav: "" })), [date, mood, Number(n) - 1, parts]);
+    console.log(`${name.padEnd(8)} peak ${r.peakDb.toFixed(1).padStart(6)}  rms ${r.rmsDb.toFixed(1).padStart(6)}`);
   }
 } finally {
   await site.close();

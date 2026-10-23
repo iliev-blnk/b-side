@@ -1,6 +1,6 @@
 import "@fontsource-variable/jost";
 import { createMaster } from "./audio/master.ts";
-import { renderOffline } from "./audio/offline.ts";
+import { renderOffline, renderTrack } from "./audio/offline.ts";
 import { type Playing, schedule } from "./audio/play.ts";
 import { loadPack, type Pack } from "./audio/samples.ts";
 import { type Day, isDay, isPressed, longDay, pressedDays, today } from "./record/date.ts";
@@ -100,6 +100,7 @@ let token = 0;
 const w = window as unknown as {
   __playing: number;
   __render: typeof renderOffline;
+  __renderTrack: typeof renderTrack;
   __still: (day: Day, t: number, width: number, height: number) => Promise<string>;
   __sleeve: (day: Day, size: number) => Promise<string>;
   __cuts: (day: Day) => { start: number; kind: string; comp: string }[];
@@ -196,6 +197,7 @@ addEventListener("keydown", (e) => {
 // ---- hooks for scripts (stills, renders, smoke test) ----
 
 w.__render = renderOffline;
+w.__renderTrack = renderTrack;
 w.__still = async (day, t, width, height) => {
   await fonts;
   const c = document.createElement("canvas");

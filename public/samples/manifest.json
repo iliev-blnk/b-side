@@ -1,108 +1,112 @@
 {
   "piano": [
     {
-      "note": "B1",
-      "file": "piano-B1.mp3"
+      "note": "A#1",
+      "file": "piano-As1.mp3"
     },
     {
-      "note": "C#2",
-      "file": "piano-Cs2.mp3"
+      "note": "C2",
+      "file": "piano-C2.mp3"
     },
     {
-      "note": "D#2",
-      "file": "piano-Ds2.mp3"
+      "note": "D2",
+      "file": "piano-D2.mp3"
     },
     {
-      "note": "F2",
-      "file": "piano-F2.mp3"
+      "note": "E2",
+      "file": "piano-E2.mp3"
     },
     {
-      "note": "G2",
-      "file": "piano-G2.mp3"
+      "note": "F#2",
+      "file": "piano-Fs2.mp3"
     },
     {
-      "note": "A2",
-      "file": "piano-A2.mp3"
+      "note": "G#2",
+      "file": "piano-Gs2.mp3"
     },
     {
-      "note": "B2",
-      "file": "piano-B2.mp3"
+      "note": "A#2",
+      "file": "piano-As2.mp3"
     },
     {
-      "note": "C#3",
-      "file": "piano-Cs3.mp3"
+      "note": "C3",
+      "file": "piano-C3.mp3"
     },
     {
-      "note": "D#3",
-      "file": "piano-Ds3.mp3"
+      "note": "D3",
+      "file": "piano-D3.mp3"
     },
     {
-      "note": "F3",
-      "file": "piano-F3.mp3"
+      "note": "E3",
+      "file": "piano-E3.mp3"
     },
     {
-      "note": "G3",
-      "file": "piano-G3.mp3"
+      "note": "F#3",
+      "file": "piano-Fs3.mp3"
     },
     {
-      "note": "A3",
-      "file": "piano-A3.mp3"
+      "note": "G#3",
+      "file": "piano-Gs3.mp3"
     },
     {
-      "note": "B3",
-      "file": "piano-B3.mp3"
+      "note": "A#3",
+      "file": "piano-As3.mp3"
     },
     {
-      "note": "C#4",
-      "file": "piano-Cs4.mp3"
+      "note": "C4",
+      "file": "piano-C4.mp3"
     },
     {
-      "note": "D#4",
-      "file": "piano-Ds4.mp3"
+      "note": "D4",
+      "file": "piano-D4.mp3"
     },
     {
-      "note": "F4",
-      "file": "piano-F4.mp3"
+      "note": "E4",
+      "file": "piano-E4.mp3"
     },
     {
-      "note": "G4",
-      "file": "piano-G4.mp3"
+      "note": "F#4",
+      "file": "piano-Fs4.mp3"
     },
     {
-      "note": "A4",
-      "file": "piano-A4.mp3"
+      "note": "G#4",
+      "file": "piano-Gs4.mp3"
     },
     {
-      "note": "B4",
-      "file": "piano-B4.mp3"
+      "note": "A#4",
+      "file": "piano-As4.mp3"
     },
     {
-      "note": "C#5",
-      "file": "piano-Cs5.mp3"
+      "note": "C5",
+      "file": "piano-C5.mp3"
     },
     {
-      "note": "D#5",
-      "file": "piano-Ds5.mp3"
+      "note": "D5",
+      "file": "piano-D5.mp3"
     },
     {
-      "note": "F5",
-      "file": "piano-F5.mp3"
+      "note": "E5",
+      "file": "piano-E5.mp3"
     },
     {
-      "note": "G5",
-      "file": "piano-G5.mp3"
+      "note": "F#5",
+      "file": "piano-Fs5.mp3"
     },
     {
-      "note": "A5",
-      "file": "piano-A5.mp3"
+      "note": "G#5",
+      "file": "piano-Gs5.mp3"
     },
     {
-      "note": "B5",
-      "file": "piano-B5.mp3"
+      "note": "A#5",
+      "file": "piano-As5.mp3"
     },
     {
-      "note": "C#6",
-      "file": "piano-Cs6.mp3"
+      "note": "C6",
+      "file": "piano-C6.mp3"
+    },
+    {
+      "note": "D6",
+      "file": "piano-D6.mp3"
     }
   ],
   "keys": [
@@ -157,6 +161,60 @@
     {
       "note": "C6",
       "file": "keys-C6.mp3"
+    }
+  ],
+  "bass": [
+    {
+      "note": "E1",
+      "file": "bass-E1.mp3"
+    },
+    {
+      "note": "F#1",
+      "file": "bass-Fs1.mp3"
+    },
+    {
+      "note": "G1",
+      "file": "bass-G1.mp3"
+    },
+    {
+      "note": "A#1",
+      "file": "bass-As1.mp3"
+    },
+    {
+      "note": "C2",
+      "file": "bass-C2.mp3"
+    },
+    {
+      "note": "D2",
+      "file": "bass-D2.mp3"
+    },
+    {
+      "note": "E2",
+      "file": "bass-E2.mp3"
+    },
+    {
+      "note": "F#2",
+      "file": "bass-Fs2.mp3"
+    },
+    {
+      "note": "G#2",
+      "file": "bass-Gs2.mp3"
+    },
+    {
+      "note": "A2",
+      "file": "bass-A2.mp3"
+    },
+    {
+      "note": "C#3",
+      "file": "bass-Cs3.mp3"
+    },
+    {
+      "note": "E3",
+      "file": "bass-E3.mp3"
+    },
+    {
+      "note": "G#3",
+      "file": "bass-Gs3.mp3"
     }
   ],
   "sax": [
@@ -233,6 +291,162 @@
       "file": "sax-Fs5.mp3"
     }
   ],
+  "trumpet": [
+    {
+      "note": "A#3",
+      "file": "trumpet-As3.mp3"
+    },
+    {
+      "note": "C4",
+      "file": "trumpet-C4.mp3"
+    },
+    {
+      "note": "D#4",
+      "file": "trumpet-Ds4.mp3"
+    },
+    {
+      "note": "G#4",
+      "file": "trumpet-Gs4.mp3"
+    },
+    {
+      "note": "A#4",
+      "file": "trumpet-As4.mp3"
+    },
+    {
+      "note": "D5",
+      "file": "trumpet-D5.mp3"
+    },
+    {
+      "note": "F5",
+      "file": "trumpet-F5.mp3"
+    },
+    {
+      "note": "A5",
+      "file": "trumpet-A5.mp3"
+    }
+  ],
+  "trombone": [
+    {
+      "note": "D#2",
+      "file": "trombone-Ds2.mp3"
+    },
+    {
+      "note": "F2",
+      "file": "trombone-F2.mp3"
+    },
+    {
+      "note": "A#2",
+      "file": "trombone-As2.mp3"
+    },
+    {
+      "note": "D3",
+      "file": "trombone-D3.mp3"
+    },
+    {
+      "note": "F3",
+      "file": "trombone-F3.mp3"
+    },
+    {
+      "note": "C4",
+      "file": "trombone-C4.mp3"
+    },
+    {
+      "note": "C#4",
+      "file": "trombone-Cs4.mp3"
+    },
+    {
+      "note": "D#4",
+      "file": "trombone-Ds4.mp3"
+    },
+    {
+      "note": "F4",
+      "file": "trombone-F4.mp3"
+    }
+  ],
+  "flute": [
+    {
+      "note": "C4",
+      "file": "flute-C4.mp3"
+    },
+    {
+      "note": "E4",
+      "file": "flute-E4.mp3"
+    },
+    {
+      "note": "A4",
+      "file": "flute-A4.mp3"
+    },
+    {
+      "note": "C5",
+      "file": "flute-C5.mp3"
+    },
+    {
+      "note": "E5",
+      "file": "flute-E5.mp3"
+    },
+    {
+      "note": "A5",
+      "file": "flute-A5.mp3"
+    },
+    {
+      "note": "C6",
+      "file": "flute-C6.mp3"
+    },
+    {
+      "note": "E6",
+      "file": "flute-E6.mp3"
+    },
+    {
+      "note": "A6",
+      "file": "flute-A6.mp3"
+    },
+    {
+      "note": "C7",
+      "file": "flute-C7.mp3"
+    }
+  ],
+  "clarinet": [
+    {
+      "note": "D3",
+      "file": "clarinet-D3.mp3"
+    },
+    {
+      "note": "F3",
+      "file": "clarinet-F3.mp3"
+    },
+    {
+      "note": "A#3",
+      "file": "clarinet-As3.mp3"
+    },
+    {
+      "note": "D4",
+      "file": "clarinet-D4.mp3"
+    },
+    {
+      "note": "F4",
+      "file": "clarinet-F4.mp3"
+    },
+    {
+      "note": "A#4",
+      "file": "clarinet-As4.mp3"
+    },
+    {
+      "note": "D5",
+      "file": "clarinet-D5.mp3"
+    },
+    {
+      "note": "F5",
+      "file": "clarinet-F5.mp3"
+    },
+    {
+      "note": "A#5",
+      "file": "clarinet-As5.mp3"
+    },
+    {
+      "note": "D6",
+      "file": "clarinet-D6.mp3"
+    }
+  ],
   "vibes": [
     {
       "note": "F3",
@@ -305,6 +519,132 @@
       "file": "harmonica-C6.mp3"
     }
   ],
+  "strings": [
+    {
+      "note": "C2",
+      "file": "strings-C2.mp3"
+    },
+    {
+      "note": "E2",
+      "file": "strings-E2.mp3"
+    },
+    {
+      "note": "G2",
+      "file": "strings-G2.mp3"
+    },
+    {
+      "note": "B2",
+      "file": "strings-B2.mp3"
+    },
+    {
+      "note": "D3",
+      "file": "strings-D3.mp3"
+    },
+    {
+      "note": "F3",
+      "file": "strings-F3.mp3"
+    },
+    {
+      "note": "G3",
+      "file": "strings-G3.mp3"
+    },
+    {
+      "note": "A3",
+      "file": "strings-A3.mp3"
+    },
+    {
+      "note": "B3",
+      "file": "strings-B3.mp3"
+    },
+    {
+      "note": "D4",
+      "file": "strings-D4.mp3"
+    },
+    {
+      "note": "F4",
+      "file": "strings-F4.mp3"
+    },
+    {
+      "note": "A4",
+      "file": "strings-A4.mp3"
+    },
+    {
+      "note": "C5",
+      "file": "strings-C5.mp3"
+    },
+    {
+      "note": "E5",
+      "file": "strings-E5.mp3"
+    },
+    {
+      "note": "G5",
+      "file": "strings-G5.mp3"
+    },
+    {
+      "note": "B5",
+      "file": "strings-B5.mp3"
+    },
+    {
+      "note": "D6",
+      "file": "strings-D6.mp3"
+    }
+  ],
+  "marimba": [
+    {
+      "note": "C3",
+      "file": "marimba-C3.mp3"
+    },
+    {
+      "note": "G3",
+      "file": "marimba-G3.mp3"
+    },
+    {
+      "note": "B3",
+      "file": "marimba-B3.mp3"
+    },
+    {
+      "note": "F4",
+      "file": "marimba-F4.mp3"
+    },
+    {
+      "note": "C5",
+      "file": "marimba-C5.mp3"
+    },
+    {
+      "note": "G5",
+      "file": "marimba-G5.mp3"
+    },
+    {
+      "note": "B5",
+      "file": "marimba-B5.mp3"
+    }
+  ],
+  "glock": [
+    {
+      "note": "G5",
+      "file": "glock-G5.mp3"
+    },
+    {
+      "note": "C6",
+      "file": "glock-C6.mp3"
+    },
+    {
+      "note": "G6",
+      "file": "glock-G6.mp3"
+    },
+    {
+      "note": "C7",
+      "file": "glock-C7.mp3"
+    },
+    {
+      "note": "G7",
+      "file": "glock-G7.mp3"
+    },
+    {
+      "note": "C8",
+      "file": "glock-C8.mp3"
+    }
+  ],
   "hat": [
     {
       "note": "closed",
@@ -341,12 +681,22 @@
     {
       "note": "ghost",
       "file": "snare-ghost.mp3",
-      "source": "Snare2_taps_v4_rr1_Mid.wav"
+      "source": "Snare2_HitSN_v3_rr1_Mid.wav"
     },
     {
       "note": "rim",
       "file": "snare-rim.mp3",
       "source": "Snare2_stick_v1_rr1_Mid.wav"
+    },
+    {
+      "note": "tap",
+      "file": "snare-tap.mp3",
+      "source": "Snare2_taps_v4_rr1_Mid.wav"
+    },
+    {
+      "note": "roll",
+      "file": "snare-roll.mp3",
+      "source": "Snare2_rollSN_v4_rr1_Mid.wav"
     }
   ],
   "shaker": [
@@ -359,6 +709,93 @@
       "note": "up",
       "file": "shaker-up.mp3",
       "source": "Mid_ShakerDouble_Up_rr1.wav"
+    }
+  ],
+  "ride": [
+    {
+      "note": "ride",
+      "file": "ride-ride.mp3",
+      "source": "susCymb2_hit_stick_mp1.wav"
+    },
+    {
+      "note": "soft",
+      "file": "ride-soft.mp3",
+      "source": "susCymb2_hit_stick_pp1.wav"
+    },
+    {
+      "note": "bell",
+      "file": "ride-bell.mp3",
+      "source": "susCymb2_hit_bell_p1.wav"
+    }
+  ],
+  "crash": [
+    {
+      "note": "crash",
+      "file": "crash-crash.mp3",
+      "source": "susCymb1_hit_f1.wav"
+    },
+    {
+      "note": "swell",
+      "file": "crash-swell.mp3",
+      "source": "susCymb1_cresc_2s.wav"
+    }
+  ],
+  "tom": [
+    {
+      "note": "high",
+      "file": "tom-high.mp3",
+      "source": "Tom 1/Stick/TomH_HitS_v3_rr1_Mid.wav"
+    },
+    {
+      "note": "low",
+      "file": "tom-low.mp3",
+      "source": "Tom 2/Stick/TomL_HitS_v3_rr1_Mid.wav"
+    }
+  ],
+  "conga": [
+    {
+      "note": "open",
+      "file": "conga-open.mp3",
+      "source": "Conga_HitN_v2_rr1_Sum.wav"
+    },
+    {
+      "note": "mute",
+      "file": "conga-mute.mp3",
+      "source": "Conga_HitFM_v2_rr1_Sum.wav"
+    },
+    {
+      "note": "high",
+      "file": "conga-high.mp3",
+      "source": "Quinto_HitN_v2_rr1_Sum.wav"
+    },
+    {
+      "note": "low",
+      "file": "conga-low.mp3",
+      "source": "Tumba_HitN_v2_rr1_Sum.wav"
+    }
+  ],
+  "bongo": [
+    {
+      "note": "high",
+      "file": "bongo-high.mp3",
+      "source": "BongoH_Hit1_v2_rr1_Mid.wav"
+    },
+    {
+      "note": "low",
+      "file": "bongo-low.mp3",
+      "source": "BongoL_Hit1_v2_rr1_Mid.wav"
+    },
+    {
+      "note": "mute",
+      "file": "bongo-mute.mp3",
+      "source": "BongoH_HitMuted1_v2_rr1_Mid.wav"
+    }
+  ],
+  "clave": [
+    {
+      "note": "hit",
+      "file": "clave-hit.mp3",
+      "source": "Claves1_Hit_v2_rr1_Mid.wav"
     }
   ]
 }
