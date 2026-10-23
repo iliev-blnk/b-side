@@ -12,16 +12,16 @@ export function swingBeat(beat: number, swing: number): number {
 }
 
 const MIX: Record<Part, { gain: number; pan: number }> = {
-  kick: { gain: 0.95, pan: 0 },
-  snare: { gain: 0.6, pan: 0.05 },
-  hat: { gain: 0.3, pan: 0.25 },
-  shaker: { gain: 0.32, pan: -0.25 },
-  bass: { gain: 0.7, pan: 0 },
-  keys: { gain: 0.34, pan: -0.15 },
-  piano: { gain: 0.38, pan: -0.12 },
-  sax: { gain: 0.42, pan: 0.12 },
-  vibes: { gain: 0.36, pan: 0.18 },
-  harmonica: { gain: 0.3, pan: 0.15 },
+  kick: { gain: 0.8, pan: 0 },
+  snare: { gain: 0.85, pan: 0.05 },
+  hat: { gain: 1.1, pan: 0.25 },
+  shaker: { gain: 1.4, pan: -0.25 },
+  bass: { gain: 1.0, pan: 0 },
+  keys: { gain: 0.85, pan: -0.15 },
+  piano: { gain: 1.2, pan: -0.12 },
+  sax: { gain: 1.2, pan: 0.12 },
+  vibes: { gain: 0.65, pan: 0.18 },
+  harmonica: { gain: 0.95, pan: 0.15 },
 };
 
 /** How long a note rings after its written length (struck things keep ringing; breath stops). */
@@ -85,6 +85,9 @@ export function schedule(ctx: BaseAudioContext, pack: Pack, score: Score, at: nu
       rate = s.rate;
     }
     src.playbackRate.value = rate;
+    src.connect(amp).connect(bus(e.part));
+    src.start(t);
+    sources.push(src);
 
     const level = vel * vel;
     const release = RELEASE[e.part];
@@ -105,9 +108,6 @@ export function schedule(ctx: BaseAudioContext, pack: Pack, score: Score, at: nu
     } else {
       amp.gain.value = level;
     }
-    src.connect(amp).connect(bus(e.part));
-    src.start(t);
-    sources.push(src);
   }
 
   const crackle = ctx.createBufferSource();

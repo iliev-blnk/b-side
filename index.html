@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>b-side · sound check</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;600;800&display=swap" rel="stylesheet" />
+    <style>
+      :root { --ink: #0d0c0b; --paper: #e9e3d6; --red: #c8321f; --yellow: #efb417; --blue: #1d4a9c; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; background: var(--ink); color: var(--paper); font-family: Jost, system-ui, sans-serif; display: grid; place-items: center; padding: 16px; }
+      main { width: min(640px, 100%); }
+      h1 { font-weight: 800; font-size: clamp(64px, 16vw, 128px); line-height: 0.85; margin: 0 0 32px; letter-spacing: -0.02em; }
+      .moods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      button { font: inherit; font-weight: 600; font-size: 20px; border: 0; padding: 22px 12px; cursor: pointer; color: var(--ink); }
+      button[data-mood="noir"] { background: var(--paper); }
+      button[data-mood="chase"] { background: var(--yellow); }
+      button[data-mood="sad"] { background: var(--blue); color: var(--paper); }
+      button[aria-pressed="true"] { outline: 4px solid var(--red); outline-offset: -4px; }
+      .row { display: flex; gap: 8px; margin-top: 8px; }
+      input { flex: 1; min-width: 0; font: inherit; font-size: 18px; background: transparent; color: var(--paper); border: 2px solid #3a3631; padding: 10px 12px; }
+      .row button { background: #3a3631; color: var(--paper); font-size: 16px; padding: 10px 16px; }
+      #info { min-height: 1.5em; color: #a49d90; margin-top: 20px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>b-side</h1>
+      <div class="moods">
+        <button data-mood="noir">noir</button>
+        <button data-mood="chase">chase</button>
+        <button data-mood="sad">sad</button>
+      </div>
+      <div class="row">
+        <input id="seed" aria-label="date" spellcheck="false" />
+        <button id="next">next day</button>
+        <button id="stop">stop</button>
+      </div>
+      <p id="info"></p>
+    </main>
+    <script type="module" src="/src/spike.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+import { generate } from "../music/score.ts";
+import type { Mood, Part } from "../music/types.ts";
+import { createMaster } from "./master.ts";
+import { schedule } from "./play.ts";
+import { loadPack } from "./samples.ts";
+
+const SR = 44100;
+
+export interface Rendered {
+  wav: string;
+  peakDb: number;
+  rmsDb: number;
+  seconds: number;
+}
+
+function encodeWav(buf: AudioBuffer): Uint8Array {
+  const ch = buf.numberOfChannels;
+  const n = buf.length;
+  const out = new DataView(new ArrayBuffer(44 + n * ch * 2));
+  const str = (o: number, s: string) => [...s].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
+  str(0, "RIFF");
+  out.setUint32(4, 36 + n * ch * 2, true);
+  str(8, "WAVEfmt ");
+  out.setUint32(16, 16, true);
+  out.setUint16(20, 1, true);
+  out.setUint16(22, ch, true);
+  out.setUint32(24, buf.sampleRate, true);
+  out.setUint32(28, buf.sampleRate * ch * 2, true);
+  out.setUint16(32, ch * 2, true);
+  out.setUint16(34, 16, true);
+  str(36, "data");
+  out.setUint32(40, n * ch * 2, true);
+  const data = Array.from({ length: ch }, (_, c) => buf.getChannelData(c));
+  for (let i = 0; i < n; i++) {
+    for (let c = 0; c < ch; c++) {
+      const v = Math.max(-1, Math.min(1, data[c]![i]!));
+      out.setInt16(44 + (i * ch + c) * 2, v * 32767, true);
+    }
+  }
+  return new Uint8Array(out.buffer);
+}
+
+function base64(bytes: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+/** Renders a theme through the same chain as live playback; used by scripts/render.mjs. */
+export async function renderOffline(seed: string, mood: Mood, base: string, only?: Part[]): Promise<Rendered> {
+  const full = generate(seed, mood);
+  // `only` renders a stem (used to balance the mix)
+  const score = only ? { ...full, events: full.events.filter((e) => only.includes(e.part)) } : full;
+  const seconds = score.lengthSec + 4;
+  const ctx = new OfflineAudioContext(2, Math.ceil(seconds * SR), SR);
+  const pack = await loadPack(ctx, base);
+  const master = createMaster(ctx, mood);
+  master.output.connect(ctx.destination);
+  schedule(ctx, pack, score, 0.05, master);
+  const buf = await ctx.startRendering();
+  let peak = 0;
+  let sum = 0;
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    for (const v of buf.getChannelData(c)) {
+      peak = Math.max(peak, Math.abs(v));
+      sum += v * v;
+    }
+  }
+  const rms = Math.sqrt(sum / (buf.length * buf.numberOfChannels));
+  return { wav: base64(encodeWav(buf)), peakDb: 20 * Math.log10(peak || 1e-9), rmsDb: 20 * Math.log10(rms || 1e-9), seconds };
+}

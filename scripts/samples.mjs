@@ -1,6 +1,6 @@
 // Builds public/samples from VCSL (CC0): sparse-clones only the folders we use,
 // picks one velocity layer per note, converts to small mono mp3s and writes the manifest.
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -41,10 +41,21 @@ function clone() {
   execFileSync("git", ["-C", CACHE, "sparse-checkout", "set", "--no-cone", ...dirs.map((d) => `/${d}/`)], { stdio: "inherit" });
 }
 
+/** Peak level in dB of the trimmed sample, so every sample can be normalized to -1 dBFS. */
+function peakDb(src, trim) {
+  const r = spawnSync("ffmpeg", ["-hide_banner", "-i", src, "-af", `${trim},volumedetect`, "-f", "null", "-"], { encoding: "utf8" });
+  const m = /max_volume: (-?[\d.]+) dB/.exec(r.stderr);
+  if (!m) throw new Error(`no level for ${src}`);
+  return Number(m[1]);
+}
+
+// VCSL is recorded with lots of headroom (some samples peak near -30 dBFS); normalize each one.
 function convert(src, dst, seconds) {
+  const trim = `silenceremove=start_periods=1:start_threshold=-50dB,atrim=0:${seconds},afade=t=out:st=${seconds - 0.05}:d=0.05`;
+  const gain = -1 - peakDb(src, trim);
   execFileSync("ffmpeg", [
     "-loglevel", "error", "-y", "-i", src,
-    "-af", `silenceremove=start_periods=1:start_threshold=-50dB,atrim=0:${seconds},afade=t=out:st=${seconds - 0.05}:d=0.05`,
+    "-af", `${trim},volume=${gain.toFixed(2)}dB`,
     "-ac", "1", "-ar", "32000", "-c:a", "libmp3lame", "-q:a", "5", dst,
   ]);
 }
