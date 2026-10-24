@@ -44,7 +44,7 @@ With reduced motion turned on, the record plays over its sleeve and nothing move
 
 While a record plays, anyone can play along on the lead instrument. Use the pads, or the keys A to
 L. Notes come out in the record's scale on the swing grid, so there are no wrong ones. The figure on
-screen plays what you play. Two knobs work live: *intensity* thins or fills the arrangement, and
+screen plays what you play. Two knobs work live: *band* thins or fills the arrangement, and
 *room* goes from dry to smoky. A take, meaning your notes and knob moves, can be kept in the link
 (`#2026-10-23/take=…`) for anyone to hear with the band. There is no server. The timeline under the
 film scrubs through the three acts.
