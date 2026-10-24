@@ -1,6 +1,6 @@
 import { type Rng, rng } from "../../music/rng.ts";
 import { drawSkyline, lamp, lampLight, skyline, smoke, wire } from "../city.ts";
-import { beatAt, count, since } from "../cues.ts";
+import { beatAt, count, glow, lights as windowsOn, since } from "../cues.ts";
 import { figure, type Pt } from "../rig.ts";
 import { type Camera, H, type Layer, type Piece, seen, W } from "../stage.ts";
 import { BASE, blend, breathe, clamp01, frac, frame, inOut, lerp, marks, out3, pool, type Scene, setupSpan, type Shot, shift, shuffle, sky, town, view, weather } from "./kit.ts";
@@ -163,7 +163,7 @@ export const tramScene: Scene = (s) => {
     const i = count(ms, t);
     const setup: TramSetup = i === 0 ? "stop" : i === 1 ? "ride" : order[i % 2]!;
     const b = breathe(s, t);
-    const chord = count(s.c.chords, t);
+    const chord = windowsOn(s.c, t);
     if (setup === "stop") {
       const k = out3((t - s.t0 - bar * 0.4) / (bar * 2.4));
       const tx = lerp(FX + 2600, FX - 330, k);
@@ -331,12 +331,12 @@ export const roofScene: Scene = (s) => {
       else if (setup === "back") cam = frame(fx0, edge.top - 200, 1.7 * b, W * 0.26, H * 0.62, 1, 0.08);
       else cam = frame(fx0 + 20, edge.top - 250, 3.1 * b, W * 0.42, H * 0.5, 1, 0.04);
     }
-    const chord = count(s.c.chords, t);
+    const chord = windowsOn(s.c, t);
     const rain = weather(s, t, cam);
     const layers: Layer[] = [
       { id: "sky", z: 14, pieces: sky(s.world, t) },
       { ...town(s, t)[0]!, pieces: [...town(s, t)[0]!.pieces, { id: "far/ground", kind: "rect", ink: "far", x: -6000, y: BASE - 4, w: 20000, h: 3000 }] },
-      { id: "below", z: 1.8, pieces: drawSkyline("below", low, "mid", "lit", chord, 0.3), cast: true },
+      { id: "below", z: 1.8, pieces: drawSkyline("below", low, "mid", "lit", chord, 0.3 + 0.22 * glow(s.c, t)), cast: true },
       ...rain.slice(0, 1),
       { id: "roofs", z: 1.02, pieces: drawRoofs(shown, t), cast: true },
       { id: "fig", z: 1, pieces: people, cast: true },

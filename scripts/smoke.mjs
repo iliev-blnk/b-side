@@ -26,10 +26,44 @@ try {
   const shelf = await page.$$("#grid figure");
   check(shelf.length === 13, `the shelf holds the 13 earlier records (${shelf.length})`);
 
+  check((await page.$$("#today ol.tracks li")).length === 3, "the side lists its three tracks");
   await page.click("#today .play");
-  await page.waitForFunction(() => window.__playing === 1, null, { timeout: 15000 });
+  await page.waitForFunction(() => window.__playing === 1 && window.__side, null, { timeout: 20000 });
   await page.waitForTimeout(800);
-  check((await painted(page, "#player canvas")) > 2, "the episode is drawing");
+  check((await painted(page, "#player canvas.film")) > 2, "the film is drawing");
+  check((await page.$$("#player .timeline .act")).length === 3, "the timeline has the three acts");
+
+  // sit in: wait for the band, play a few notes, and share them
+  await page.waitForFunction(() => window.__side.where(window.__side.time()) !== null, null, { timeout: 15000 });
+  for (const k of ["a", "d", "g", "j"]) {
+    await page.keyboard.down(k);
+    await page.waitForTimeout(120);
+    await page.keyboard.up(k);
+    await page.waitForTimeout(80);
+  }
+  const notes = await page.evaluate(() => window.__side.take.notes.length);
+  check(notes === 4, `the pads go in the take (${notes})`);
+  check((await page.textContent("#player .take .count"))?.includes("4 notes"), "the take is counted");
+  await page.locator("#player .knob input").first().fill("4");
+  check((await page.evaluate(() => window.__side.take.moves.length)) > 0, "a knob move goes in the take");
+  await page.click("#player .take .copy");
+  const link = await page.evaluate(() => location.hash);
+  check(/^#\d{4}-\d{2}-\d{2}\/take=[\w-]+$/.test(link), `the take is in the link (${link})`);
+
+  // the needle can be picked up anywhere
+  const box = await page.locator("#player .timeline").boundingBox();
+  await page.mouse.click(box.x + box.width * 0.8, box.y + box.height / 2);
+  await page.waitForTimeout(300);
+  const [at, length] = await page.evaluate(() => [window.__side.time(), window.__side.length]);
+  check(Math.abs(at - length * 0.8) < 3, `scrubbing moves the needle (${at.toFixed(1)}s of ${length.toFixed(0)}s)`);
+
+  // the take plays back from its link
+  const replay = await newPage({ hash: link });
+  check((await replay.textContent("#today"))?.includes("4 notes"), "a take link says what was played");
+  await replay.click("#today .play");
+  await replay.waitForFunction(() => window.__side, null, { timeout: 20000 });
+  check((await replay.evaluate(() => window.__side.take.notes.length)) === 4, "the take comes back from the link");
+  await replay.close();
 
   // start another record over the first, twice, fast
   await page.click("#close");
@@ -50,7 +84,7 @@ try {
   const still = await newPage({ reducedMotion: true });
   await still.click("#today .play");
   await still.waitForFunction(() => window.__playing === 1, null, { timeout: 15000 });
-  check((await still.$("#player .still canvas")) !== null && (await still.$("#player > canvas")) === null, "reduced motion plays the sleeve, not the film");
+  check((await still.$("#player canvas.still")) !== null && (await still.$("#player canvas.film")) === null, "reduced motion plays the sleeve, not the film");
   await still.close();
 
   const future = await newPage({ hash: "#2026-12-25" });

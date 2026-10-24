@@ -1,22 +1,22 @@
 import "@fontsource-variable/jost";
-import { createMaster } from "./audio/master.ts";
 import { renderOffline, renderTrack } from "./audio/offline.ts";
-import { type Playing, schedule } from "./audio/play.ts";
-import { loadPack, type Pack } from "./audio/samples.ts";
-import { type Day, isDay, isPressed, longDay, pressedDays, today } from "./record/date.ts";
-import { PAPER } from "./record/palette.ts";
-import { press, type Pressing } from "./record/press.ts";
-import { Episode } from "./visual/episode.ts";
-import { FONT, type Sheet } from "./visual/paper.ts";
-import { drawSleeve } from "./visual/sleeve.ts";
+import { partsOf } from "./audio/perform.ts";
+import { extendPack, loadPack, type Pack } from "./audio/samples.ts";
 import { generateEp } from "./band/ep.ts";
 import type { Mood } from "./band/types.ts";
-import { rng } from "./music/rng.ts";
-import { palette } from "./record/palette.ts";
+import { draw as drawFilm, type Film, film as makeFilm } from "./film/film.ts";
 import { deep } from "./film/looks.ts";
 import { onTwos } from "./film/stage.ts";
-import { draw as drawFilm, type Film, film as makeFilm } from "./film/film.ts";
-import { recordNo } from "./record/date.ts";
+import { rng } from "./music/rng.ts";
+import { type Day, isDay, isPressed, longDay, pressedDays, recordNo, today } from "./record/date.ts";
+import { PAPER, palette } from "./record/palette.ts";
+import { press, type Pressing } from "./record/press.ts";
+import { deck } from "./sit/deck.ts";
+import { Session } from "./sit/session.ts";
+import { decodeTake, emptyTake, type Take } from "./sit/take.ts";
+import { Episode } from "./visual/episode.ts";
+import { FONT } from "./visual/paper.ts";
+import { drawSleeve } from "./visual/sleeve.ts";
 
 const BASE = `${import.meta.env.BASE_URL}samples/`;
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
@@ -43,7 +43,9 @@ function sleeveButton(p: Pressing, px: number): HTMLButtonElement {
   return b;
 }
 
-function featured(day: Day) {
+const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+
+function featured(day: Day, take: Take | null) {
   const host = $("#today");
   host.replaceChildren();
   host.className = "";
@@ -55,18 +57,32 @@ function featured(day: Day) {
     return;
   }
   const p = press(day);
+  const f = filmOf(day, p.mood);
   host.className = "today";
   const meta = document.createElement("div");
   meta.className = "meta";
-  const lead = p.score.band.lead ? ` and ${KEYS[p.score.band.lead]}` : "";
-  meta.innerHTML = `<h2></h2><p></p><p class="band"></p>`;
+  meta.innerHTML = `<h2></h2><p></p><ol class="tracks"></ol><p class="band"></p>`;
   meta.querySelector("h2")!.textContent = p.title;
-  meta.querySelectorAll("p")[0]!.textContent = `No. ${p.no}, pressed ${longDay(p.day)}${day === now ? ", tonight" : ""}.`;
-  meta.querySelectorAll("p")[1]!.textContent = `${p.mood}, ${p.score.bpm} bpm, ${KEYS[p.score.band.keys]}${lead}. ${Math.round(p.score.lengthSec)} seconds.`;
+  meta.querySelectorAll("p")[0]!.textContent = `No. ${p.no}, pressed ${longDay(p.day)}${day === now ? ", tonight" : ""}. Side A, ${p.mood}, ${clock(f.length)}.`;
+  const ol = meta.querySelector("ol")!;
+  for (const t of f.ep.tracks) {
+    const li = document.createElement("li");
+    const len = document.createElement("span");
+    len.textContent = clock(t.lengthSec);
+    li.append(t.title, len);
+    ol.append(li);
+  }
+  meta.querySelectorAll("p")[1]!.textContent = `${f.cast.band.name}: ${f.cast.band.players.map((x) => x.plays).join(", ")}.`;
+  if (take && take.notes.length) {
+    const sat = document.createElement("p");
+    sat.className = "sat";
+    sat.textContent = `Someone sat in on this one: ${take.notes.length} note${take.notes.length === 1 ? "" : "s"}. They play back over the record.`;
+    meta.append(sat);
+  }
   const btn = document.createElement("button");
   btn.className = "play";
-  btn.textContent = "Play";
-  btn.addEventListener("click", () => void play(p));
+  btn.textContent = take ? "Play the take" : "Play";
+  btn.addEventListener("click", () => void play(p, take ?? emptyTake()));
   meta.append(btn);
   host.append(sleeveButton(p, 560), meta);
 }
@@ -102,8 +118,8 @@ function shelf(featuredDay: Day) {
 // ---- the player ----
 
 let ctx: AudioContext | null = null;
-let pack: Promise<Pack> | null = null;
-let current: { playing: Playing | null; raf: number } | null = null;
+let pack: Pack | null = null;
+let close: (() => void) | null = null;
 let token = 0;
 const w = window as unknown as {
   __playing: number;
@@ -114,27 +130,30 @@ const w = window as unknown as {
   __cuts: (day: Day) => { start: number; kind: string; comp: string }[];
   __film: (day: Day, mood: Mood, t: number, width: number, height: number) => Promise<string>;
   __filmInfo: (day: Day, mood: Mood) => unknown;
+  __side: Session | null;
 };
-// __playing counts live schedules, so a test can catch two records playing at once
+// __playing counts live sides, so a test can catch two records playing at once
 w.__playing = 0;
+w.__side = null;
 const player = $("#player");
 
 function stop() {
   token++;
-  if (current) {
-    cancelAnimationFrame(current.raf);
-    if (current.playing) {
-      current.playing.stop();
-      w.__playing--;
-    }
-    current = null;
+  if (close) {
+    close();
+    close = null;
+    w.__playing--;
+    w.__side = null;
   }
   player.classList.remove("on");
   player.querySelectorAll(":scope > :not(.close)").forEach((n) => n.remove());
   document.body.style.overflow = "";
 }
 
-async function play(p: Pressing) {
+const looks = (day: Day, mood: Mood) => deep(palette(rng(`b-side/${day}`).fork("palette"), mood));
+const linkTo = (day: Day, take: string) => `${location.pathname}${location.search}#${day}${take ? `/take=${take}` : ""}`;
+
+async function play(p: Pressing, take: Take = emptyTake()) {
   stop();
   const mine = token;
   player.classList.add("on");
@@ -143,60 +162,29 @@ async function play(p: Pressing) {
   wait.className = "wait";
   wait.textContent = "putting the needle down";
   player.append(wait);
-  current = { playing: null, raf: 0 };
-  ctx ??= new AudioContext();
+  ctx ??= new AudioContext({ latencyHint: "interactive" });
   await ctx.resume();
-  pack ??= loadPack(ctx, BASE);
-  const [loaded] = await Promise.all([pack, fonts]);
+  const f = filmOf(p.day, p.mood);
+  const parts = [...new Set(f.ep.tracks.flatMap(partsOf))];
+  if (pack) await extendPack(ctx, BASE, pack, parts);
+  else pack = await loadPack(ctx, BASE, parts);
+  await fonts;
   // closed, or another record was picked, while the samples loaded
   if (mine !== token) return;
   wait.remove();
 
-  const master = createMaster(ctx, p.mood);
-  master.output.connect(ctx.destination);
-  const at = ctx.currentTime + 0.15;
-  current.playing = schedule(ctx, loaded, p.score, at, master);
-  w.__playing++;
-  const ep = new Episode(p);
-
+  let still: HTMLCanvasElement | null = null;
   if (reduced.matches) {
-    const still = document.createElement("div");
+    still = document.createElement("canvas");
     still.className = "still";
-    const c = document.createElement("canvas");
-    c.width = c.height = 1000;
-    drawSleeve(c.getContext("2d")!, 1000, p);
-    still.append(c);
-    player.append(still);
-  } else {
-    const c = document.createElement("canvas");
-    player.append(c);
-    const g = c.getContext("2d")!;
-    let last = "";
-    const loop = () => {
-      if (mine !== token) return;
-      const dpr = Math.min(devicePixelRatio || 1, 2);
-      const W = Math.round(c.clientWidth * dpr);
-      const H = Math.round(c.clientHeight * dpr);
-      if (c.width !== W || c.height !== H) {
-        c.width = W;
-        c.height = H;
-      }
-      const t = Math.max(0, ctx!.currentTime - at - (ctx!.outputLatency || 0));
-      // paper moves on twos: only redraw when the frame or the shot changes
-      const key = `${Math.floor(t * 12)}/${ep.shotAt(t).start}/${W}x${H}`;
-      if (key !== last) {
-        last = key;
-        const sheet: Sheet = { ctx: g, w: W, h: H, u: Math.min(W, H) };
-        ep.draw(sheet, Math.min(t, ep.length - 0.001));
-      }
-      current!.raf = requestAnimationFrame(loop);
-    };
-    current.raf = requestAnimationFrame(loop);
+    still.width = still.height = 1000;
+    drawSleeve(still.getContext("2d")!, 1000, p);
   }
-  const ends = (ep.length + 0.2) * 1000;
-  setTimeout(() => {
-    if (mine === token) stop();
-  }, ends);
+  const session = new Session(ctx, pack, f, take, ctx.destination);
+  close = deck({ host: player, session, film: f, look: looks(p.day, p.mood), still, link: (t) => linkTo(p.day, t), onEnd: () => {} });
+  w.__playing++;
+  w.__side = session;
+  session.start(0);
 }
 
 $("#close").addEventListener("click", stop);
@@ -255,10 +243,17 @@ w.__filmInfo = (day, mood) => {
   };
 };
 
+/** `#2026-10-23`, or `#2026-10-23/take=…` for a night with someone's take on it. */
+function parse(): { day: Day; take: Take | null } {
+  const [d = "", rest = ""] = decodeURIComponent(location.hash.slice(1)).split("/");
+  const day = isDay(d) ? d : now;
+  const take = rest.startsWith("take=") ? decodeTake(rest.slice(5)) : null;
+  return { day, take };
+}
+
 function route() {
-  const h = decodeURIComponent(location.hash.slice(1));
-  const day = isDay(h) ? h : now;
-  featured(day);
+  const { day, take } = parse();
+  featured(day, take);
   shelf(day);
 }
 addEventListener("hashchange", () => {

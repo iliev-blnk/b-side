@@ -17,6 +17,9 @@ export interface Cues {
   snares: number[];
   /** The melody, whoever carries it. */
   lead: { t: number; dur: number; midi: number; vel: number }[];
+  /** What someone sitting in has played, as it is played: when, and the notes. */
+  played: number[];
+  sitIn: { t: number; dur: number; midi: number; vel: number }[];
 }
 
 export function cues(track: Track): Cues {
@@ -39,7 +42,32 @@ export function cues(track: Track): Cues {
       .filter((e) => e.midi !== undefined && e.part === voiceAt(e.beat))
       .map((e) => ({ t: at(e.beat), dur: secondsAt(track, e.beat + e.dur) - at(e.beat), midi: e.midi!, vel: e.vel }))
       .sort((a, b) => a.t - b.t),
+    played: [],
+    sitIn: [],
   };
+}
+
+/** Adds a note someone sat in with, keeping both lists in time order. */
+export function addPlayed(c: Cues, note: Cues["sitIn"][number]) {
+  const i = count(c.played, note.t);
+  c.played.splice(i, 0, note.t);
+  c.sitIn.splice(i, 0, note);
+}
+
+export function clearPlayed(c: Cues) {
+  c.played.length = 0;
+  c.sitIn.length = 0;
+}
+
+/** The step the windows are on: a new pattern with every chord, and with every note sat in. */
+export const lights = (c: Cues, t: number) => count(c.chords, t) + count(c.played, t);
+
+/** How much the town brightens just after a note sat in (0..1). */
+export function glow(c: Cues, t: number): number {
+  const i = count(c.played, t);
+  let g = 0;
+  for (let j = i - 1; j >= 0 && t - c.played[j]! < 2; j--) g = Math.max(g, c.sitIn[j]!.vel * Math.exp(-(t - c.played[j]!) / 0.7));
+  return g;
 }
 
 /** How many of `times` have happened by `t`. */

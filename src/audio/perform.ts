@@ -100,6 +100,13 @@ export interface Playing {
   /** Context time when the last note has rung out. */
   end: number;
   master: Master;
+  /** A gain after each part's mix level, for thinning the band out or pushing it. */
+  trim(part: Part): GainNode;
+  /**
+   * Plays one more note on `part` through the band's own bus, at context time `at`. With `seconds`
+   * it is written out; without, it holds until `release` is called.
+   */
+  voice(part: Part, midi: number, at: number, vel: number, seconds?: number): { release(at: number): void };
 }
 
 export interface PerformOptions {
@@ -107,6 +114,8 @@ export interface PerformOptions {
   tail?: number;
   /** Only these parts (stems, for balancing the mix). */
   only?: Part[];
+  /** Context time to start from: anything before it is left out (playing from the middle of a side). */
+  from?: number;
 }
 
 /**
@@ -127,42 +136,44 @@ export function performTrack(ctx: BaseAudioContext, pack: Pack, track: Track, at
   const last = sections.at(-1)!;
   const endBeat = (last.startBar + last.bars) * meter;
   const timeOf = (beat: number) => at + secondsAt(track, beat);
+  const from = Math.max(at, opts.from ?? at);
+  /** Automation from before the context began (picking the side up late) is moved to its start. */
+  const T = (x: number) => Math.max(0, x);
 
   // drums go straight to the master; everything else through a bus the kick can push down
   const music = ctx.createGain();
   music.connect(master.input);
-  const buses = new Map<Part, AudioNode>();
+  const buses = new Map<Part, { input: GainNode; trim: GainNode }>();
   const bus = (part: Part) => {
     let node = buses.get(part);
     if (!node) {
       const g = ctx.createGain();
       g.gain.value = MIX[part].gain;
+      const trim = ctx.createGain();
       const p = ctx.createStereoPanner();
       p.pan.value = MIX[part].pan;
-      g.connect(p).connect(isDrum(part) ? master.input : music);
-      buses.set(part, g);
-      node = g;
+      g.connect(trim).connect(p).connect(isDrum(part) ? master.input : music);
+      node = { input: g, trim };
+      buses.set(part, node);
     }
     return node;
   };
 
   // strings spread out by pitch: cellos left, violins right
-  const panFor = (e: NoteEvent) => (e.part === "strings" ? Math.max(-0.5, Math.min(0.5, ((e.midi ?? 60) - 62) / 40)) : null);
+  const panFor = (part: Part, midi: number | undefined) => (part === "strings" ? Math.max(-0.5, Math.min(0.5, ((midi ?? 60) - 62) / 40)) : null);
 
   let end = at + track.lengthSec;
   const tapeStop = track.ending === "runout" ? timeOf((last.startBar + 1) * meter) : null;
   const tapeLen = 0.9;
   const events = opts.only ? track.events.filter((e) => opts.only!.includes(e.part)) : track.events;
 
-  for (const e of events) {
-    const t = Math.max(at, timeOf(e.beat) + (human.next() * 2 - 1) * 0.008);
-    if (tapeStop !== null && t > tapeStop + tapeLen) continue;
-    const vel = Math.max(0.02, Math.min(1, e.vel * (1 + (human.next() * 2 - 1) * 0.1)));
+  /** One note: the sample, its envelope, and the tape stop if it is still sounding then. */
+  const sound = (part: Part, note: number | string | undefined, variant: string | undefined, t: number, vel: number, seconds: number | null, long: boolean) => {
     const src = ctx.createBufferSource();
     const amp = ctx.createGain();
     let rate = 1;
-    let dest = bus(e.part);
-    const pan = panFor(e);
+    let dest: AudioNode = bus(part).input;
+    const pan = panFor(part, typeof note === "number" ? note : undefined);
     if (pan !== null) {
       const p = ctx.createStereoPanner();
       p.pan.value = pan;
@@ -171,17 +182,16 @@ export function performTrack(ctx: BaseAudioContext, pack: Pack, track: Track, at
     }
 
     let buffer: AudioBuffer;
-    if (e.part === "kick") buffer = kick;
-    else if (e.part === "brush") buffer = e.variant === "tap" ? brushes.tap : brushes.sweep;
+    if (part === "kick") buffer = kick;
+    else if (part === "brush") buffer = variant === "tap" ? brushes.tap : brushes.sweep;
     else {
-      const s = nearestSample(pack.index, e.part, e.midi ?? e.variant ?? "");
+      const s = nearestSample(pack.index, part, note ?? variant ?? "");
       const b = pack.buffers.get(s.file);
-      if (!b) continue;
+      if (!b) return null;
       buffer = b;
       rate = s.rate;
     }
-    const seconds = e.dur * spbAt(track, e.beat);
-    if (SUSTAINED.has(e.part) && seconds > (buffer.duration / rate) * 0.8) {
+    if (SUSTAINED.has(part) && (seconds === null || seconds > (buffer.duration / rate) * 0.8)) {
       const l = loopable(ctx, buffer);
       buffer = l.buffer;
       src.loop = true;
@@ -195,34 +205,48 @@ export function performTrack(ctx: BaseAudioContext, pack: Pack, track: Track, at
     sources.push(src);
 
     const level = vel * vel;
-    const env = ENVELOPE[e.part];
-    let stopAt: number;
+    const env = ENVELOPE[part];
+    const close = (off: number) => {
+      let stopAt: number;
+      if (env) {
+        const release = env[1];
+        amp.gain.cancelScheduledValues(off);
+        amp.gain.setValueAtTime(level, off);
+        amp.gain.exponentialRampToValueAtTime(0.0001, off + release);
+        stopAt = off + release + 0.05;
+        end = Math.max(end, off + release);
+      } else {
+        // one-shots ring for as long as written (cymbals, rolls), at least their natural length
+        stopAt = Math.max(off, t + buffer.duration / rate) + 0.05;
+      }
+      if (tapeStop !== null && stopAt > tapeStop) {
+        // the reels wind down: everything sounding slides down in pitch and out
+        src.playbackRate.setValueAtTime(rate, Math.max(t, tapeStop));
+        src.playbackRate.exponentialRampToValueAtTime(rate * 0.12, tapeStop + tapeLen);
+        stopAt = Math.min(stopAt, tapeStop + tapeLen + 0.05);
+      }
+      src.stop(stopAt);
+    };
     if (env) {
-      const [attack, release] = env;
-      const off = Math.max(t + attack, t + seconds);
+      const attack = env[0];
       amp.gain.setValueAtTime(0, t);
       amp.gain.linearRampToValueAtTime(level, t + attack);
-      amp.gain.setValueAtTime(level, off);
-      amp.gain.exponentialRampToValueAtTime(0.0001, off + release);
-      stopAt = off + release + 0.05;
-      end = Math.max(end, off + release);
-      if (SCOOP.has(e.part) && e.dur >= 1) {
+      if (SCOOP.has(part) && long) {
         src.playbackRate.setValueAtTime(rate * 2 ** (-0.35 / 12), t);
         src.playbackRate.linearRampToValueAtTime(rate, t + 0.09);
       }
-    } else {
-      amp.gain.value = level;
-      // one-shots ring for as long as written (cymbals, rolls), at least their natural length
-      stopAt = t + Math.max(seconds, buffer.duration / rate) + 0.05;
-    }
-    if (tapeStop !== null && stopAt > tapeStop) {
-      // the reels wind down: everything sounding slides down in pitch and out
-      const from = Math.max(t, tapeStop);
-      src.playbackRate.setValueAtTime(rate, from);
-      src.playbackRate.exponentialRampToValueAtTime(rate * 0.12, tapeStop + tapeLen);
-      stopAt = Math.min(stopAt, tapeStop + tapeLen + 0.05);
-    }
-    src.stop(stopAt);
+    } else amp.gain.value = level;
+    if (seconds !== null) close(Math.max(t + (env?.[0] ?? 0), t + seconds));
+    return { release: (off: number) => close(Math.max(t + (env?.[0] ?? 0), off)) };
+  };
+
+  for (const e of events) {
+    bus(e.part);
+    const t = Math.max(at, timeOf(e.beat) + (human.next() * 2 - 1) * 0.008);
+    if (tapeStop !== null && t > tapeStop + tapeLen) continue;
+    const vel = Math.max(0.02, Math.min(1, e.vel * (1 + (human.next() * 2 - 1) * 0.1)));
+    if (t < from) continue;
+    sound(e.part, e.midi, e.variant, t, vel, e.dur * spbAt(track, e.beat), e.dur >= 1);
   }
 
   // the bass and keys duck a little under every boom-bap kick
@@ -230,8 +254,9 @@ export function performTrack(ctx: BaseAudioContext, pack: Pack, track: Track, at
     for (const e of events) {
       if (e.part !== "kick" || e.vel < 0.5) continue;
       const t = timeOf(e.beat);
-      music.gain.setTargetAtTime(0.72, t, 0.004);
-      music.gain.setTargetAtTime(1, t + 0.04, 0.07);
+      if (t < from) continue;
+      music.gain.setTargetAtTime(0.72, T(t), 0.004);
+      music.gain.setTargetAtTime(1, T(t + 0.04), 0.07);
     }
   }
 
@@ -241,16 +266,16 @@ export function performTrack(ctx: BaseAudioContext, pack: Pack, track: Track, at
   for (const s of sections) {
     const t0 = timeOf(s.startBar * meter);
     if (s.kind === "intro" && track.style === "boombap") {
-      f.setValueAtTime(650, t0);
+      f.setValueAtTime(650, T(t0));
       const t1 = timeOf((s.startBar + s.bars) * meter);
-      f.setValueAtTime(650, t1 - 0.5);
-      f.exponentialRampToValueAtTime(20000, t1);
+      f.setValueAtTime(650, T(t1 - 0.5));
+      f.exponentialRampToValueAtTime(20000, T(t1));
     } else if (s.treatment === "break") {
-      f.setValueAtTime(20000, t0 - 0.3);
-      f.exponentialRampToValueAtTime(1800, t0);
+      f.setValueAtTime(20000, T(t0 - 0.3));
+      f.exponentialRampToValueAtTime(1800, T(t0));
       const t1 = timeOf((s.startBar + s.bars) * meter);
-      f.setValueAtTime(1800, t1 - 0.4);
-      f.exponentialRampToValueAtTime(20000, t1);
+      f.setValueAtTime(1800, T(t1 - 0.4));
+      f.exponentialRampToValueAtTime(20000, T(t1));
     }
   }
 
@@ -258,13 +283,13 @@ export function performTrack(ctx: BaseAudioContext, pack: Pack, track: Track, at
   if (track.ending === "fade") {
     const t0 = timeOf(last.startBar * meter);
     const t1 = timeOf(endBeat);
-    g.setValueAtTime(1, t0);
-    g.linearRampToValueAtTime(0.0001, t1);
+    g.setValueAtTime(1, T(t0));
+    g.linearRampToValueAtTime(0.0001, T(t1));
     end = Math.min(end, t1 + 0.5);
   }
   if (tapeStop !== null) {
-    g.setValueAtTime(1, tapeStop);
-    g.setTargetAtTime(0, tapeStop + tapeLen * 0.4, 0.12);
+    g.setValueAtTime(1, T(tapeStop));
+    g.setTargetAtTime(0, T(tapeStop + tapeLen * 0.4), 0.12);
     end = Math.min(end, tapeStop + tapeLen + 0.3);
   }
 
@@ -275,7 +300,7 @@ export function performTrack(ctx: BaseAudioContext, pack: Pack, track: Track, at
   const crackle = ctx.createBufferSource();
   crackle.buffer = crackleBuffer(ctx, Math.max(1, crackleEnd - at), track.n + 1);
   crackle.connect(master.crackle);
-  crackle.start(at);
+  crackle.start(from, from - at);
   sources.push(crackle);
   if (groove > 0) {
     // 33⅓ rpm: one turn every 1.8 seconds, a soft thump where the groove locks
@@ -290,13 +315,14 @@ export function performTrack(ctx: BaseAudioContext, pack: Pack, track: Track, at
       const a = ctx.createGain();
       a.gain.value = 0.6 * (1 - k / 4);
       s.connect(a).connect(thump);
+      if (g0 + 0.4 + k * 1.8 < from) continue;
       s.start(g0 + 0.4 + k * 1.8);
       sources.push(s);
     }
     const cg = ctx.createGain();
     master.crackle.disconnect();
     master.crackle.connect(cg).connect(master.output);
-    cg.gain.setValueAtTime(1, crackleEnd - 1.5);
+    cg.gain.setValueAtTime(1, T(crackleEnd - 1.5));
     cg.gain.linearRampToValueAtTime(0, crackleEnd);
   }
   end = crackleEnd;
@@ -304,6 +330,10 @@ export function performTrack(ctx: BaseAudioContext, pack: Pack, track: Track, at
   return {
     end,
     master,
+    trim: (part) => bus(part).trim,
+    voice(part, midi, t, vel, seconds) {
+      return sound(part, midi, undefined, Math.max(t, ctx.currentTime), vel, seconds ?? null, false) ?? { release() {} };
+    },
     stop() {
       for (const s of sources) {
         try {

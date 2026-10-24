@@ -1,6 +1,6 @@
 import { rng } from "../../music/rng.ts";
 import { lamp, lampLight, shops, smoke } from "../city.ts";
-import { beatAt, count, since } from "../cues.ts";
+import { beatAt, count, glow, lights, since } from "../cues.ts";
 import { figure } from "../rig.ts";
 import { type Camera, type Layer, type Piece, W } from "../stage.ts";
 import { along, BASE, blend, breathe, frame, inOut, lerp, out3, pool, type Scene, setupSpan, type Shot, shuffle, sky, town, view, weather } from "./kit.ts";
@@ -15,7 +15,7 @@ export const LAMPS = Array.from({ length: 10 }, (_, i) => -400 + i * 900 + 1590)
 
 /** The street set, from x0 to x1: shops, road, lamps and their light. */
 export function set(s: Shot, t: number, x0: number, x1: number): { street: Piece[]; air: Piece[] } {
-  const chord = count(s.c.chords, t);
+  const chord = lights(s.c, t);
   const street: Piece[] = [...shops("shops", x0, x1, BASE - 14, chord, "near", "lit"), { id: "road", kind: "rect", ink: "street", x: x0 - 400, y: BASE - 14, w: x1 - x0 + 800, h: 900, edge: 0.3 }];
   const air: Piece[] = [];
   for (const [i, x] of LAMPS.entries()) {

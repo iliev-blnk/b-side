@@ -89,14 +89,19 @@ function playing(s: Shot, seat: Seat, t: number): Play {
     seat.notes.map((n) => n.t),
     t,
   );
-  const last = seat.notes[i - 1];
+  let last = seat.notes[i - 1];
+  // whoever sits in plays through the lead's horn
+  if (seat.who.chair === "lead") {
+    const mine = s.c.sitIn[count(s.c.played, t) - 1];
+    if (mine && (!last || mine.t > last.t)) last = mine;
+  }
   const ago = last ? t - last.t : Infinity;
   const horn = seat.who.chair === "lead" || seat.who.chair === "second";
   const voice = s.c.sections.find((x) => t >= x.t && t < x.end)?.voice;
   return {
     on: horn ? voice === seat.who.part || ago < 1.2 : true,
     note: last ? last.vel * Math.exp(-ago / 0.4) : 0,
-    pitch: last ? (last.midi - seat.lo) / (seat.hi - seat.lo) : 0.5,
+    pitch: last ? Math.max(0, Math.min(1, (last.midi - seat.lo) / (seat.hi - seat.lo))) : 0.5,
     strike: [hit(seat.near, t), hit(seat.far, t)],
     beat: beatAt(s.c, t),
   };

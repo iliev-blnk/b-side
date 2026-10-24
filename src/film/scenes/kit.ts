@@ -2,7 +2,7 @@ import type { Track } from "../../band/types.ts";
 import { type Rng, rng } from "../../music/rng.ts";
 import type { Cast } from "../cast.ts";
 import { beams, drawSkyline, neon, type Skyline, skyline } from "../city.ts";
-import { beatAt, count, type Cues } from "../cues.ts";
+import { beatAt, count, type Cues, glow, lights } from "../cues.ts";
 import { type Camera, H, type Layer, type Piece, seen, type View, W } from "../stage.ts";
 
 /**
@@ -125,14 +125,15 @@ export function sky(w: World, t: number, o: { beams?: boolean; moon?: number } =
 
 /** The far and middle distance: windows on the chords, the sign blinking now and then. */
 export function town(s: Shot, t: number, o: { sign?: [number, number]; lit?: number } = {}): Layer[] {
-  const chord = count(s.c.chords, t);
-  const mid: Piece[] = drawSkyline("mid", s.world.mid, "mid", "lit", chord, o.lit ?? 0.26);
+  const chord = lights(s.c, t);
+  const lit = (o.lit ?? 0.26) + 0.22 * glow(s.c, t);
+  const mid: Piece[] = drawSkyline("mid", s.world.mid, "mid", "lit", chord, lit);
   if (o.sign) {
     const on = rng(`flicker/${count(s.c.beats, t)}`).next() > 0.07;
     mid.push(...neon("sign", s.cast.sign, o.sign[0], o.sign[1], 44, on, "near"));
   }
   return [
-    { id: "far", z: 6, pieces: drawSkyline("far", s.world.far, "far", "farLit", chord, (o.lit ?? 0.26) * 0.8), cast: true },
+    { id: "far", z: 6, pieces: drawSkyline("far", s.world.far, "far", "farLit", chord, lit * 0.8), cast: true },
     { id: "mid", z: 3, pieces: mid, cast: true },
   ];
 }

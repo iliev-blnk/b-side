@@ -1,4 +1,4 @@
-import { beatAt, count } from "../cues.ts";
+import { beatAt, count, lights } from "../cues.ts";
 import { figure, type Pt, spin } from "../rig.ts";
 import { type Camera, H, type Layer, type Piece, W } from "../stage.ts";
 import { BASE, breathe, clamp01, frac, frame, lerp, marks, out3, pool, type Scene, type Shot, shuffle, view, weather } from "./kit.ts";
@@ -151,7 +151,7 @@ export const platformScene: Scene = (s) => {
     const layers: Layer[] = [
       { id: "wall", z: 1.6, pieces: wall(s), cast: true },
       { id: "steam", z: 1.14, pieces: steam(noseAt, t, s.t0) },
-      { id: "train", z: 1.12, pieces: [...train(nose, count(s.c.chords, t)), ...aboard], cast: true },
+      { id: "train", z: 1.12, pieces: [...train(nose, lights(s.c, t)), ...aboard], cast: true },
       ...rain.slice(0, 1),
       { id: "platform", z: 1.02, pieces: [{ id: "plat", kind: "rect", ink: "street", x: -2500, y: PLAT, w: 9000, h: 800 }, { id: "plat/line", kind: "rect", ink: "paper", alpha: 0.5, x: -2500, y: PLAT + 6, w: 9000, h: 8, edge: 0.3 }, ...canopy(s, t)], cast: true },
       { id: "fig", z: 1, pieces: people, cast: true },

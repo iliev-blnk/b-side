@@ -11,6 +11,10 @@ export interface Master {
   filter: BiquadFilterNode;
   /** After the compressor: fades and the tape stop pull this down. */
   fader: GainNode;
+  /** The room's return, and the tone lowpass, with where they sit as written (the room knob moves them). */
+  wet: GainNode;
+  tone: BiquadFilterNode;
+  base: { wet: number; cutoff: number };
 }
 
 export interface Room {
@@ -109,5 +113,5 @@ export function createMaster(ctx: BaseAudioContext, mood: Mood, space: Room = { 
   wow.connect(room).connect(wet).connect(comp);
   comp.connect(fader).connect(output);
   crackle.connect(output);
-  return { input, crackle, output, filter, fader };
+  return { input, crackle, output, filter, fader, wet, tone: lowpass, base: { wet: space.wet, cutoff: CUTOFF[mood] } };
 }
