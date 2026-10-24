@@ -38,17 +38,18 @@ export function credits(film: Film, sleeve: Sleeve, t: number): Piece[] {
   const sec = c.sections.find((s) => local >= s.t && local < s.end);
   const out: Piece[] = [];
 
-  // the band's name over the first intro, one letter on each note of the tune or each beat
+  // the band's name over the first intro, a word at a time on the beat, so a frame never stops mid-word
   if (n === 0 && sec?.kind === "intro") {
     const name = band.name.toUpperCase();
+    const words = name.split(" ");
     const from = sec.t + 60 / c.bpm;
-    const step = Math.min(0.12, (sec.end - sec.t) / 3 / name.length);
+    const step = Math.min(60 / c.bpm, (sec.end - sec.t) / 3 / words.length);
     const shown = Math.floor((local - from) / step) + 1;
     const fade = clamp01((sec.end - 0.4 - local) / 0.5);
     if (shown > 0 && fade > 0) {
       const size = name.length > 20 ? 64 : 80;
       out.push({ id: "band/plate", kind: "rect", ink: "near", alpha: fade, x: W / 2 - (name.length * size * 0.8) / 2 - 40, y: H * 0.5 - size - 10, w: name.length * size * 0.8 + 80, h: size * 1.5, edge: 0.5 });
-      out.push({ id: "band", kind: "text", ink: "type", alpha: fade, text: name.slice(0, shown), x: W / 2 - (name.length * size * 0.8) / 2 + 4, y: H * 0.5 + size * 0.2, size, weight: 800, spacing: 0.12 });
+      out.push({ id: "band", kind: "text", ink: "type", alpha: fade, text: words.slice(0, shown).join(" "), x: W / 2 - (name.length * size * 0.8) / 2 + 4, y: H * 0.5 + size * 0.2, size, weight: 800, spacing: 0.12 });
     }
   }
 

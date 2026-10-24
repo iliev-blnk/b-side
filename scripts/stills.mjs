@@ -1,29 +1,38 @@
-// Contact sheets of episodes and sleeves, for looking at the picture without playing it.
-// node scripts/stills.mjs [days...] [--size=WxH]
-import { mkdirSync, writeFileSync } from "node:fs";
+// Contact sheets of the film, a frame from the middle of every shot, for looking at the picture
+// without playing it.
+// node scripts/stills.mjs [days...] [--mood=noir|chase|sad] [--size=WxH] [--scene=name]
+//   writes stills/<day>-<mood>/<nn>-<scene>.jpg and a sheet.jpg of them all (needs ffmpeg)
+import { execFileSync } from "node:child_process";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { entry } from "../src/label/record.ts";
 import { openSite } from "./browser.mjs";
 
 const args = process.argv.slice(2);
-const sizeArg = args.find((a) => a.startsWith("--size="));
-const [W, H] = (sizeArg?.slice(7) ?? "960x540").split("x").map(Number);
+const opt = (name) => args.find((a) => a.startsWith(`--${name}=`))?.split("=")[1];
+const [W, H] = (opt("size") ?? "960x540").split("x").map(Number);
 const days = args.filter((a) => !a.startsWith("--"));
-if (!days.length) days.push("2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29");
+if (!days.length) days.push("2026-10-23", "2026-10-24", "2026-10-25");
 
-const { page, close } = await openSite({ now: "2026-12-31T12:00:00Z" });
-const out = `stills/${W}x${H}`;
-mkdirSync(out, { recursive: true });
 const save = (file, url) => writeFileSync(file, Buffer.from(url.split(",")[1], "base64"));
+const { page, close } = await openSite({ now: "2027-12-31T12:00:00Z" });
 try {
   for (const day of days) {
-    const cuts = await page.evaluate((d) => window.__cuts(d), day);
-    save(`${out}/${day}-sleeve.png`, await page.evaluate((d) => window.__sleeve(d, 800), day));
-    for (const [i, c] of cuts.entries()) {
-      // a moment after the cut, once the pieces have landed
-      const end = i + 1 < cuts.length ? cuts[i + 1].start : c.start + 4;
-      const t = Math.min(c.start + 1.4, (c.start + end) / 2);
-      save(`${out}/${day}-${String(i).padStart(2, "0")}-${c.kind}-${c.comp}.png`, await page.evaluate(([d, t, w, h]) => window.__still(d, t, w, h), [day, t, W, H]));
+    const mood = opt("mood") ?? entry(day).mood;
+    const out = `stills/${day}-${mood}`;
+    rmSync(out, { recursive: true, force: true });
+    mkdirSync(out, { recursive: true });
+    const { shots } = await page.evaluate(([d, m]) => window.__filmInfo(d, m), [day, mood]);
+    let n = 0;
+    for (const [i, s] of shots.entries()) {
+      if (opt("scene") && s.scene !== opt("scene")) continue;
+      // past the transition in, before the one out
+      const t = s.start + Math.min(2.5, (s.end - s.start) / 2);
+      save(`${out}/${String(i).padStart(2, "0")}-${s.scene}.jpg`, await page.evaluate(([d, m, t, w, h]) => window.__film(d, m, t, w, h), [day, mood, t, W, H]));
+      n++;
     }
-    console.log(`${day}: ${cuts.length} shots`);
+    const cols = Math.min(4, n);
+    execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-pattern_type", "glob", "-i", `${out}/[0-9]*.jpg`, "-vf", `scale=480:-1,tile=${cols}x${Math.ceil(n / cols)}:padding=4`, "-frames:v", "1", `${out}/sheet.jpg`]);
+    console.log(`${day} ${mood}: ${n} shots -> ${out}/sheet.jpg`);
   }
 } finally {
   await close();

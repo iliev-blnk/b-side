@@ -117,9 +117,11 @@ export function lampLight(id: string, [x, y]: Pt, base: number, spread: number):
     const a = ((i + 0.5) / 8) * Math.PI * 2;
     return [x + Math.cos(a) * spread * 1.2, base + 10 + Math.sin(a) * spread * 0.2];
   });
+  // two sheets of tissue: a faint wide beam and a brighter core, so it reads as light falling
   return [
-    { id: `${id}/cone`, kind: "poly", ink: "light", alpha: 0.9, pts: [[x - 18, y], [x + 18, y], [x + spread, base + 8], [x - spread, base + 8]] },
-    { id: `${id}/pool`, kind: "poly", ink: "light", alpha: 0.9, pts: pool },
+    { id: `${id}/cone`, kind: "poly", ink: "light", alpha: 0.32, pts: [[x - 18, y], [x + 18, y], [x + spread, base + 8], [x - spread, base + 8]] },
+    { id: `${id}/core`, kind: "poly", ink: "light", alpha: 0.38, pts: [[x - 10, y], [x + 10, y], [x + spread * 0.5, base + 8], [x - spread * 0.5, base + 8]] },
+    { id: `${id}/pool`, kind: "poly", ink: "light", alpha: 0.8, pts: pool },
   ];
 }
 

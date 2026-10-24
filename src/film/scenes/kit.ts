@@ -124,7 +124,7 @@ export function sky(w: World, t: number, o: { beams?: boolean; moon?: number } =
 }
 
 /** The far and middle distance: windows on the chords, the sign blinking now and then. */
-export function town(s: Shot, t: number, o: { sign?: [number, number]; lit?: number } = {}): Layer[] {
+export function town(s: Shot, t: number, o: { sign?: [number, number]; lit?: number; farLit?: number } = {}): Layer[] {
   const chord = lights(s.c, t);
   const lit = (o.lit ?? 0.26) + 0.22 * glow(s.c, t);
   const mid: Piece[] = drawSkyline("mid", s.world.mid, "mid", "lit", chord, lit);
@@ -133,7 +133,7 @@ export function town(s: Shot, t: number, o: { sign?: [number, number]; lit?: num
     mid.push(...neon("sign", s.cast.sign, o.sign[0], o.sign[1], 44, on, "near"));
   }
   return [
-    { id: "far", z: 6, pieces: drawSkyline("far", s.world.far, "far", "farLit", chord, lit * 0.8), cast: true },
+    { id: "far", z: 6, pieces: drawSkyline("far", s.world.far, "far", "farLit", chord, lit * (o.farLit ?? 0.8)), cast: true },
     { id: "mid", z: 3, pieces: mid, cast: true },
   ];
 }

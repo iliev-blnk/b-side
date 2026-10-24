@@ -290,7 +290,7 @@ type RoofSetup = "wide" | "back" | "close";
 export const roofScene: Scene = (s) => {
   const run = s.variant === "run";
   const rs = roofs(rng(`${s.cast.seed}/roofs`));
-  const low = skyline(rng(`${s.cast.seed}/roofs/below`), { x0: -3000, x1: 12000, base: 1700, tall: [330, 790], wide: [120, 240], gap: 40, win: 10 });
+  const low = skyline(rng(`${s.cast.seed}/roofs/below`), { x0: -3000, x1: 12000, base: 1700, tall: [330, 790], wide: [140, 260], gap: 60, win: 18 });
   const edge = rs.find((f) => f.x + f.w > 1300)!;
   // stood at the edge, the roofs end there and the city drops away
   const shown = run ? rs : rs.filter((f) => f.x <= edge.x);
@@ -333,10 +333,12 @@ export const roofScene: Scene = (s) => {
     }
     const chord = windowsOn(s.c, t);
     const rain = weather(s, t, cam);
+    const far = town(s, t, { farLit: 0.3 })[0]!;
     const layers: Layer[] = [
       { id: "sky", z: 14, pieces: sky(s.world, t) },
-      { ...town(s, t)[0]!, pieces: [...town(s, t)[0]!.pieces, { id: "far/ground", kind: "rect", ink: "far", x: -6000, y: BASE - 4, w: 20000, h: 3000 }] },
-      { id: "below", z: 1.8, pieces: drawSkyline("below", low, "mid", "lit", chord, 0.3 + 0.22 * glow(s.c, t)), cast: true },
+      // seen from up here the far city is small, so only a few of its windows are lit or it turns to static
+      { ...far, pieces: [...far.pieces, { id: "far/ground", kind: "rect", ink: "far", x: -6000, y: BASE - 4, w: 20000, h: 3000 }] },
+      { id: "below", z: 1.8, pieces: drawSkyline("below", low, "mid", "lit", chord, 0.16 + 0.14 * glow(s.c, t)), cast: true },
       ...rain.slice(0, 1),
       { id: "roofs", z: 1.02, pieces: drawRoofs(shown, t), cast: true },
       { id: "fig", z: 1, pieces: people, cast: true },
@@ -363,12 +365,14 @@ function span(): Piece[] {
     { id: "br/plinth", kind: "rect", ink: "near", x: x0, y: DECK - 18, w: x1 - x0, h: 20, edge: 0.4 },
   ];
   for (let x = x0, i = 0; x < x1; x += 46, i++) out.push({ id: `br/bal${i}`, kind: "poly", ink: "near", pts: [[x - 6, RAIL], [x + 6, RAIL], [x + 10, RAIL + 36], [x + 6, DECK - 16], [x - 6, DECK - 16], [x - 10, RAIL + 36]], edge: 0.3 });
-  // arches: the deck stands on piers, an arch cut out between each pair
+  // arches: the deck stands on piers, an arch cut out between each pair, springing from the water
+  // and rising to just under the deck
+  const spring = WATER + 300;
   for (let x = x0, i = 0; x < x1; x += 1100, i++) {
     const pts: Pt[] = [[x, DECK + 40], [x + 1100, DECK + 40], [x + 1100, WATER + 400]];
     for (let k = 0; k <= 12; k++) {
       const a = Math.PI * (k / 12);
-      pts.push([x + 1100 - 90 - (1 - Math.cos(a)) * 460, WATER + 40 - Math.sin(a) * 200]);
+      pts.push([x + 1100 - 90 - (1 - Math.cos(a)) * 460, spring - Math.sin(a) * (spring - DECK - 80)]);
     }
     pts.push([x, WATER + 400]);
     out.push({ id: `br/arch${i}`, kind: "poly", ink: "near", pts });
