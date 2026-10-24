@@ -65,7 +65,7 @@ try {
     const audio = `renders/${day}-${mood}.mp3`;
     const sound = existsSync(audio) ? ["-ss", from.toFixed(3), "-i", audio, "-t", (to - from).toFixed(3), "-c:a", "aac", "-b:a", "192k"] : [];
     const out = join(OUT, mode === "range" ? `${day}-${mood}-${from}-${to}.mp4` : `${day}-${mood}.mp4`);
-    ff("-framerate", String(FPS), "-i", join(frames, "%05d.jpg"), ...sound, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-r", "24", "-movflags", "+faststart", "-shortest", out);
+    ff("-framerate", String(FPS), "-i", join(frames, "%05d.jpg"), ...sound, "-c:v", "libx264", "-preset", "slow", "-pix_fmt", "yuv420p", "-crf", "26", "-r", "24", "-movflags", "+faststart", "-shortest", out);
     console.log(out);
   }
 } finally {
