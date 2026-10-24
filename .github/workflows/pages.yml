@@ -1,8 +1,16 @@
 name: Pages
 
+# The record pages and the feed are built from the date and the releases, so the site is rebuilt
+# every night: after the pressing, and on its own a little later in case the pressing failed.
 on:
   push:
     branches: [main]
+  workflow_run:
+    workflows: [Press]
+    types: [completed]
+  schedule:
+    - cron: "20 21 * * *"
+    - cron: "20 22 * * *"
   workflow_dispatch:
 
 permissions:
@@ -25,7 +33,10 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - run: node scripts/label.mjs site
+        env:
+          CHROMIUM: /usr/bin/google-chrome
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist

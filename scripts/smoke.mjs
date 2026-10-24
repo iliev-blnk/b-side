@@ -1,4 +1,7 @@
 // Plays records on the shelf the way a visitor would and checks the player holds together.
+import { mkdirSync, writeFileSync } from "node:fs";
+import { recordPage } from "../src/label/page.ts";
+import { entry, linerNotes } from "../src/label/record.ts";
 import { openSite } from "./browser.mjs";
 
 const NOW = "2026-11-05T21:00:00+02:00";
@@ -24,7 +27,8 @@ let failed = false;
 try {
   check((await page.textContent("#today h2"))?.length > 0, "tonight's record is on the front");
   const shelf = await page.$$("#grid figure");
-  check(shelf.length === 13, `the shelf holds the 13 earlier records (${shelf.length})`);
+  check(shelf.length === 14, `the catalogue holds all 14 records (${shelf.length})`);
+  check((await page.textContent(".cat-head h3")) === "The catalogue, 14 records", "the catalogue counts them");
 
   check((await page.$$("#today ol.tracks li")).length === 3, "the side lists its three tracks");
   await page.click("#today .play");
@@ -80,6 +84,41 @@ try {
   check((await playing()) === 1, "only one record plays at a time");
   await page.keyboard.press("Escape");
   check((await playing()) === 0, "escape stops it");
+
+  // the catalogue: filters, search, the month
+  const cat = await newPage();
+  const count = () => cat.textContent(".cat-head h3");
+  const figures = () => cat.$$eval("#grid figure", (f) => f.length);
+  await cat.click(".chips .chip:text-is('noir')");
+  const noir = Number((await count()).split(" ")[0]);
+  check(noir > 0 && noir < 14 && (await figures()) === noir, `a mood narrows the wall (${await count()})`);
+  await cat.selectOption("select[aria-label='Any instrument']", { index: 1 });
+  check(Number((await count()).split(" ")[0]) <= noir, `an instrument narrows it further (${await count()})`);
+  await cat.click(".chips .chip:text-is('All')");
+  await cat.selectOption("select[aria-label='Any instrument']", "");
+  await cat.fill(".cat-head .search", "zzzz");
+  check((await cat.textContent("#shelf .none"))?.includes("Nothing pressed"), "a search with no match says so");
+  await cat.fill(".cat-head .search", "");
+  await cat.click(".views .chip:text-is('By month')");
+  check((await cat.textContent(".month-nav h4")) === "November 2026", "the month opens on this month");
+  check((await cat.$$(".cal .day")).length === 30 && (await cat.$$(".cal .day .sleeve")).length === 5, "november has its five records on their dates");
+  check(await cat.$eval(".month-nav .step[aria-label='Later month']", (b) => b.disabled), "there's no later month yet");
+  await cat.click(".month-nav .step[aria-label='Earlier month']");
+  check((await cat.textContent(".month-nav h4")) === "October 2026" && (await cat.$$(".cal .day .sleeve")).length === 9, "october has the first nine");
+  await cat.close();
+
+  // a record page, as the nightly build writes it
+  const day = "2026-10-24";
+  mkdirSync(`dist/r/${day}`, { recursive: true });
+  writeFileSync(`dist/r/${day}/index.html`, recordPage(entry(day), linerNotes(day), {}, "2026-11-05"));
+  const rec = await newPage({ path: `r/${day}/` });
+  check((await rec.textContent("h1")) === entry(day).title, "a record page has its title");
+  check((await rec.$$("ol.tracks li")).length === 3 && (await rec.textContent(".notes"))?.length > 200, "it lists the side and the notes");
+  check((await rec.$eval("body", (b) => getComputedStyle(b).backgroundColor)) !== "rgba(0, 0, 0, 0)", "its stylesheet loads");
+  await rec.click("a.play");
+  await rec.waitForSelector("#today h2");
+  check((await rec.textContent("#today"))?.includes("No. 2,"), "it links back to its record on the front");
+  await rec.close();
 
   const still = await newPage({ reducedMotion: true });
   await still.click("#today .play");

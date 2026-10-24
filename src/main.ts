@@ -8,12 +8,13 @@ import { draw as drawFilm, type Film, film as makeFilm } from "./film/film.ts";
 import { deep } from "./film/looks.ts";
 import { onTwos } from "./film/stage.ts";
 import { rng } from "./music/rng.ts";
-import { type Day, isDay, isPressed, longDay, pressedDays, recordNo, today } from "./record/date.ts";
+import { type Day, isDay, isPressed, longDay, recordNo, today } from "./record/date.ts";
 import { PAPER, palette } from "./record/palette.ts";
 import { press, type Pressing } from "./record/press.ts";
 import { deck } from "./sit/deck.ts";
 import { Session } from "./sit/session.ts";
 import { decodeTake, emptyTake, type Take } from "./sit/take.ts";
+import { catalogue } from "./label/catalogue.ts";
 import { Episode } from "./visual/episode.ts";
 import { FONT } from "./visual/paper.ts";
 import { drawSleeve } from "./visual/sleeve.ts";
@@ -83,36 +84,36 @@ function featured(day: Day, take: Take | null) {
   btn.className = "play";
   btn.textContent = take ? "Play the take" : "Play";
   btn.addEventListener("click", () => void play(p, take ?? emptyTake()));
-  meta.append(btn);
+  const more = document.createElement("p");
+  more.className = "more";
+  const page = document.createElement("a");
+  page.href = `r/${p.day}/`;
+  page.textContent = "Record page and notes";
+  const prints = document.createElement("button");
+  prints.type = "button";
+  prints.textContent = "Print the sleeve";
+  prints.addEventListener("click", () => {
+    prints.textContent = "Drawing it at 3000 px…";
+    void print(p).then(() => (prints.textContent = "Print the sleeve"));
+  });
+  more.append(page, prints);
+  meta.append(btn, more);
   host.append(sleeveButton(p, 560), meta);
 }
 
-function shelf(featuredDay: Day) {
-  const days = pressedDays(now).filter((d) => d !== featuredDay);
-  $("#shelf").hidden = days.length === 0;
-  const grid = $("#grid");
-  grid.replaceChildren();
-  // sleeves are drawn when they scroll into view
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      io.unobserve(e.target);
-      const fig = e.target as HTMLElement;
-      const p = press(fig.dataset.day!);
-      const cap = document.createElement("figcaption");
-      cap.innerHTML = `<b><a href="#${p.day}"></a></b>`;
-      cap.querySelector("a")!.textContent = p.title;
-      cap.append(`no. ${p.no}, ${longDay(p.day)}`);
-      fig.append(sleeveButton(p, 220), cap);
-    }
-  }, { rootMargin: "400px" });
-  for (const d of days) {
-    const fig = document.createElement("figure");
-    fig.dataset.day = d;
-    fig.style.minHeight = "200px";
-    grid.append(fig);
-    io.observe(fig);
-  }
+/** The sleeve at print size, as a PNG download. */
+async function print(p: Pressing) {
+  await fonts;
+  const c = document.createElement("canvas");
+  c.width = c.height = 3000;
+  drawSleeve(c.getContext("2d")!, 3000, p);
+  const blob = await new Promise<Blob | null>((r) => c.toBlob(r, "image/png"));
+  if (!blob) return;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `b-side-${p.day}-sleeve.png`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
 }
 
 // ---- the player ----
@@ -126,7 +127,7 @@ const w = window as unknown as {
   __render: typeof renderOffline;
   __renderTrack: typeof renderTrack;
   __still: (day: Day, t: number, width: number, height: number) => Promise<string>;
-  __sleeve: (day: Day, size: number) => Promise<string>;
+  __sleeve: (day: Day, size: number, type?: string) => Promise<string>;
   __cuts: (day: Day) => { start: number; kind: string; comp: string }[];
   __film: (day: Day, mood: Mood, t: number, width: number, height: number) => Promise<string>;
   __filmInfo: (day: Day, mood: Mood) => unknown;
@@ -204,12 +205,12 @@ w.__still = async (day, t, width, height) => {
   new Episode(press(day)).draw({ ctx: c.getContext("2d")!, w: width, h: height, u: Math.min(width, height) }, t);
   return c.toDataURL("image/png");
 };
-w.__sleeve = async (day, size) => {
+w.__sleeve = async (day, size, type = "image/png") => {
   await fonts;
   const c = document.createElement("canvas");
   c.width = c.height = size;
   drawSleeve(c.getContext("2d")!, size, press(day));
-  return c.toDataURL("image/png");
+  return c.toDataURL(type, 0.9);
 };
 w.__cuts = (day) => new Episode(press(day)).cuts.map(({ start, kind, comp }) => ({ start, kind, comp }));
 
@@ -254,7 +255,6 @@ function parse(): { day: Day; take: Take | null } {
 function route() {
   const { day, take } = parse();
   featured(day, take);
-  shelf(day);
 }
 addEventListener("hashchange", () => {
   stop();
@@ -262,3 +262,4 @@ addEventListener("hashchange", () => {
   scrollTo(0, 0);
 });
 route();
+void catalogue({ host: $("#shelf"), now, sleeve: (day, px) => sleeveButton(press(day), px) });

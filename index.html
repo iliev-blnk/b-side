@@ -45,7 +45,33 @@
       .sleeve:hover .disc, .sleeve:focus-visible .disc { transform: translateX(26%); }
       .sleeve:focus-visible { outline: 3px solid var(--bone); outline-offset: 6px; }
 
-      .shelf h3 { font-size: 15px; font-weight: 600; color: var(--dim); margin: 0 0 20px; letter-spacing: 0.02em; }
+      .cat-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; margin: 0 0 28px; padding-top: 28px; border-top: 1px solid var(--line); }
+      .cat-head h3 { font-size: 15px; font-weight: 600; color: var(--dim); margin: 0; letter-spacing: 0.02em; }
+      .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+      .controls .search, .controls select { font: inherit; font-size: 15px; color: var(--bone); background: #1a1816; border: 1px solid var(--line); padding: 8px 12px; height: 38px; }
+      .controls .search { width: 15em; }
+      .controls .search:focus, .controls select:focus { outline: 2px solid var(--bone); outline-offset: 1px; }
+      .chips { display: inline-flex; border: 1px solid var(--line); }
+      .chip { font: inherit; font-size: 14px; color: var(--dim); background: none; border: 0; padding: 0 12px; height: 36px; cursor: pointer; }
+      .chip + .chip { border-left: 1px solid var(--line); }
+      .chip[aria-pressed="true"] { background: var(--bone); color: var(--ink); }
+      .chip:focus-visible { outline: 2px solid var(--bone); outline-offset: 2px; }
+      .none { color: var(--dim); }
+      .month-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+      .month-nav h4 { margin: 0; font-size: 20px; font-weight: 600; min-width: 9em; text-align: center; }
+      .month-nav .step { font: inherit; font-size: 18px; width: 38px; height: 38px; background: none; color: var(--bone); border: 1px solid var(--line); cursor: pointer; }
+      .month-nav .step:disabled { opacity: 0.3; cursor: default; }
+      .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+      .cal .wd { font-size: 13px; color: var(--dim); }
+      .cal .day { position: relative; aspect-ratio: 1; background: #151413; }
+      .cal .day .date { position: absolute; z-index: 2; top: 4px; left: 6px; font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
+      .cal .day .sleeve canvas { box-shadow: none; }
+      .cal .day .disc { display: none; }
+      .cal .day:has(.sleeve) .date { top: 0; left: 0; padding: 2px 6px; background: #0e0d0cd9; color: var(--bone); }
+      .cal .day.empty { background: none; border: 1px dashed var(--line); }
+      .cal .day.out .sleeve { opacity: 0.18; }
+      .today .meta .more { display: flex; gap: 20px; align-items: center; margin-top: 18px; font-size: 15px; }
+      .today .meta .more a, .today .meta .more button { color: var(--bone); font: inherit; font-size: 15px; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
       .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 36px 24px; }
       .grid figure { margin: 0; }
       .grid .disc { display: none; }
@@ -111,6 +137,10 @@
         .deck .toggle { height: 48px; }
         .knobs { margin-left: auto; }
         .timeline .act .title { display: none; }
+        .controls { width: 100%; }
+        .controls .search { width: 100%; }
+        .cal { gap: 4px; }
+        .cal .wd { font-size: 11px; }
       }
     </style>
   </head>
@@ -121,10 +151,7 @@
         <p>One record pressed every night. Each is a side of three jazz tunes and a cut-paper film made to them, all from the date. You can sit in with the band.</p>
       </header>
       <section id="today"></section>
-      <section class="shelf" id="shelf" hidden>
-        <h3>Earlier</h3>
-        <div class="grid" id="grid"></div>
-      </section>
+      <section class="catalogue" id="shelf" hidden></section>
       <footer>
         Made in Chișinău by <a href="https://ilyushavb.pages.dev">Ilie Beleniuc</a>. Samples from the
         <a href="https://github.com/sgossner/VCSL">Versilian Community Sample Library</a> (CC0).

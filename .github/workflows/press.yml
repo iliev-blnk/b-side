@@ -1,0 +1,47 @@
+name: Press
+
+# Every night at midnight in Chișinău: render the night's side, film and sleeve and put them on its
+# GitHub Release. Midnight is 21:00 UTC in summer and 22:00 UTC in winter, so it runs at both; the
+# run that finds the night already pressed does nothing.
+on:
+  schedule:
+    - cron: "5 21 * * *"
+    - cron: "5 22 * * *"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Nights to press, e.g. 2026-10-23 2026-10-24 (empty: the newest unpressed)"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: press
+  cancel-in-progress: false
+
+jobs:
+  press:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pnpm install --frozen-lockfile
+      - name: Press
+        env:
+          CHROMIUM: /usr/bin/google-chrome
+          GH_TOKEN: ${{ github.token }}
+          DAYS: ${{ inputs.days }}
+        run: |
+          if [ -n "$DAYS" ]; then
+            read -ra nights <<< "$DAYS"
+            node scripts/label.mjs press --release "${nights[@]}"
+          else
+            node scripts/label.mjs press --release --missing 2
+          fi

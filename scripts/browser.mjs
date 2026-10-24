@@ -4,7 +4,7 @@ import { build, preview } from "vite";
 
 /**
  * `now` fakes the clock (an ISO time) so the shelf can be tested on any night.
- * `newPage` opens another tab on the same build, e.g. with reduced motion or a #day link.
+ * `newPage` opens another tab on the same build, e.g. with reduced motion, a #day link or another `path`.
  */
 export async function openSite({ now } = {}) {
   await build({ logLevel: "warn" });
@@ -14,11 +14,11 @@ export async function openSite({ now } = {}) {
     executablePath: process.env.CHROMIUM ?? "/usr/bin/chromium",
     args: ["--autoplay-policy=no-user-gesture-required"],
   });
-  const newPage = async ({ reducedMotion, hash = "" } = {}) => {
+  const newPage = async ({ reducedMotion, hash = "", path = "" } = {}) => {
     const page = await browser.newPage({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
     if (now) await page.clock.setFixedTime(new Date(now));
     page.on("pageerror", (e) => console.error("page error:", e.message));
-    await page.goto(url + hash);
+    await page.goto(url + path + hash);
     return page;
   };
   const page = await newPage();
