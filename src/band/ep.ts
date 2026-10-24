@@ -12,7 +12,8 @@ export function generateEp(seed: string, mood: Mood): Ep {
   const r = rng(`${seed}/ep/${mood}`);
   const plan = MOODS[mood];
   const lineup = hire(r.fork("hire"), mood);
-  const titles = tracklist(r.fork("title"), mood);
+  // the titles the sleeve prints: the same stream the pressing draws them from
+  const titles = tracklist(rng(`b-side/${seed}`).fork("title"), mood);
   const kr = r.fork("keys");
   const styles = plan.tracks.map((choices, i) => r.fork(`style${i}`).pick(choices)) as [Style, Style, Style];
   const minors = styles.map((s, i) => r.fork(`minor${i}`).chance(STYLES[s].minor));

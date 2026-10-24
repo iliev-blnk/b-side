@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { chordAt, chordPcs } from "../src/band/chords.ts";
 import { generateEp } from "../src/band/ep.ts";
+import { press } from "../src/record/press.ts";
 import { type Ep, isDrum, type Mood, RANGES } from "../src/band/types.ts";
 
 const days = Array.from({ length: 10 }, (_, i) => `2026-11-${String(i + 1).padStart(2, "0")}`);
@@ -13,6 +14,13 @@ describe("generateEp", () => {
 
   it("differs between nights", () => {
     expect(generateEp("2026-10-23", "noir").tracks[0]!.title).not.toBe(generateEp("2026-10-24", "noir").tracks[0]!.title);
+  });
+
+  it("plays the tunes the sleeve names", () => {
+    for (const d of days) {
+      const p = press(d);
+      expect(generateEp(d, p.mood).tracks.map((t) => t.title)).toEqual(p.tracks);
+    }
   });
 
   it("presses three tracks in six to nine minutes", () => {
