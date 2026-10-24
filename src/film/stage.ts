@@ -19,7 +19,8 @@ export const onTwos = (t: number) => twos(t) / FPS;
 /** What a piece is, not what colour it is: each look inks the same parts its own way. */
 export type Ink =
   | "sky" | "cloud" | "moon" | "beam" | "far" | "farLit" | "mid" | "near" | "street" | "lit" | "neon"
-  | "figure" | "back" | "trim" | "light" | "shade" | "smoke" | "rain" | "type";
+  | "figure" | "back" | "trim" | "light" | "shade" | "smoke" | "rain" | "type"
+  | "brass" | "wood" | "water" | "snow" | "paper" | "spot" | "label" | "flame";
 
 type Geo<S> = S extends Shape ? Omit<S, "color" | "alpha" | "flat"> : never;
 export type Piece = Geo<Shape> & {
@@ -81,8 +82,19 @@ export interface Look {
 
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 
+/** The part of a layer at depth `z` the camera sees, in that layer's units. */
+export function seen(z: number, cam: Camera) {
+  const ze = z - cam.d;
+  const k = (cam.zoom * z) / ze;
+  const toLayer = (sx: number, sy: number): [number, number] => [W / 2 + (sx - W / 2 + (cam.zoom * cam.x) / ze) / k, H / 2 + (sy - H / 2 + (cam.zoom * cam.y) / ze) / k];
+  const [x0, y0] = toLayer(0, 0);
+  const [x1, y1] = toLayer(W, H);
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
 let pool: HTMLCanvasElement[] = [];
-function scratch(i: number, w: number, h: number): CanvasRenderingContext2D {
+/** A pooled offscreen canvas, cleared: 0 and 1 are the stage's own. */
+export function scratch(i: number, w: number, h: number): CanvasRenderingContext2D {
   if (!pool[i] || pool[i]!.width !== w || pool[i]!.height !== h) {
     pool[i] = Object.assign(document.createElement("canvas"), { width: w, height: h });
   }
@@ -138,16 +150,27 @@ function lay(g: CanvasRenderingContext2D, pieces: Piece[], look: Look, frame: nu
   }
 }
 
-/** Draws the view into a 16:9 canvas of any size. `frame` is the twos count: it re-lays the paper. */
+/** Draws the view into a 16:9 canvas of any size, and the frame over it. */
 export function render(ctx: CanvasRenderingContext2D, view: View, look: Look, frame: number) {
+  paint(ctx, view, look, frame);
+  finish(ctx, look, frame);
+}
+
+/**
+ * Lays the view's sky and every layer. `frame` is the twos count: it re-lays the paper. Without
+ * `ground` the layers go over what is already there.
+ */
+export function paint(ctx: CanvasRenderingContext2D, view: View, look: Look, frame: number, ground = true) {
   const cw = ctx.canvas.width;
   const ch = ctx.canvas.height;
   const S = cw / W;
   const { cam } = view;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = look.inks.sky;
-  ctx.fillRect(0, 0, cw, ch);
+  if (ground) {
+    ctx.fillStyle = look.inks.sky;
+    ctx.fillRect(0, 0, cw, ch);
+  }
   const texture = look.texture ? ctx.createPattern(grain() as CanvasImageSource, "repeat") : null;
 
   const layers = [...view.layers].sort((a, b) => (a.fixed ? 1 : 0) - (b.fixed ? 1 : 0) || b.z - a.z);
@@ -221,7 +244,15 @@ export function render(ctx: CanvasRenderingContext2D, view: View, look: Look, fr
     }
   });
 
-  // the frame: light falls off to the corners, and the grain of the stock over everything
+  ctx.restore();
+}
+
+/** The frame: light falls off to the corners, and the grain of the stock over everything. */
+export function finish(ctx: CanvasRenderingContext2D, look: Look, frame: number) {
+  const cw = ctx.canvas.width;
+  const ch = ctx.canvas.height;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   if (look.vignette) {
     const v = ctx.createRadialGradient(cw / 2, ch / 2, ch * 0.35, cw / 2, ch / 2, Math.hypot(cw, ch) * 0.6);
     v.addColorStop(0, "rgba(0,0,0,0)");
@@ -229,7 +260,11 @@ export function render(ctx: CanvasRenderingContext2D, view: View, look: Look, fr
     ctx.fillStyle = v;
     ctx.fillRect(0, 0, cw, ch);
   }
-  if (look.grain && texture) {
+  if (look.grain) {
+    // the grain is in the stock, so it moves with every frame rather than sitting on the lens
+    const texture = ctx.createPattern(grain() as CanvasImageSource, "repeat")!;
+    const r = rng(`stock/${frame}`);
+    texture.setTransform(new DOMMatrix().translate(r.range(0, 256), r.range(0, 256)));
     ctx.globalCompositeOperation = "overlay";
     ctx.globalAlpha = look.grain;
     ctx.fillStyle = texture;

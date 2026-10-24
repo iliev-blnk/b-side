@@ -4,6 +4,7 @@ import { createMaster } from "./master.ts";
 import { schedule } from "./play.ts";
 import { loadPack } from "./samples.ts";
 import { generateEp } from "../band/ep.ts";
+import { cutSeconds, GAP, LEAD } from "../band/side.ts";
 import type { Part as BandPart } from "../band/types.ts";
 import { partsOf, performTrack } from "./perform.ts";
 
@@ -62,8 +63,6 @@ function measure(buf: AudioBuffer) {
   return { peakDb: 20 * Math.log10(peak || 1e-9), rmsDb: 20 * Math.log10(rms || 1e-9) };
 }
 
-/** Seconds of crackle between tracks on the side. */
-export const GAP = 2.5;
 
 /**
  * Renders one track of a night's side through the same chain as live playback, including the
@@ -71,10 +70,10 @@ export const GAP = 2.5;
  */
 export async function renderTrack(seed: string, mood: Mood, n: number, base: string, only?: BandPart[]): Promise<Rendered & { title: string; style: string }> {
   const track = generateEp(seed, mood).tracks[n]!;
-  const seconds = track.lengthSec + (n < 2 ? GAP : 7.2) + 0.5;
+  const seconds = cutSeconds(track);
   const ctx = new OfflineAudioContext(2, Math.ceil(seconds * SR), SR);
   const pack = await loadPack(ctx, base, partsOf(track));
-  performTrack(ctx, pack, track, 0.05, ctx.destination, { tail: n < 2 ? GAP : 0, only });
+  performTrack(ctx, pack, track, LEAD, ctx.destination, { tail: n < 2 ? GAP : 0, only });
   const buf = await ctx.startRendering();
   return { wav: base64(encodeWav(buf)), ...measure(buf), seconds, title: track.title, style: track.style };
 }

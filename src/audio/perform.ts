@@ -1,4 +1,5 @@
 import { STYLES } from "../band/styles.ts";
+import { RUNOUT } from "../band/side.ts";
 import { secondsAt, spbAt } from "../band/time.ts";
 import { RING } from "../band/track.ts";
 import { isDrum, type NoteEvent, type Part, type Track } from "../band/types.ts";
@@ -269,7 +270,7 @@ export function performTrack(ctx: BaseAudioContext, pack: Pack, track: Track, at
 
   // the record: crackle under everything, and after the last track the needle rides the run-out groove
   const tail = opts.tail ?? 0;
-  const groove = track.n === 2 ? 7.2 : 0;
+  const groove = track.n === 2 ? RUNOUT : 0;
   const crackleEnd = Math.max(end, at + secondsAt(track, endBeat, false) + RING[track.ending]) + tail + groove;
   const crackle = ctx.createBufferSource();
   crackle.buffer = crackleBuffer(ctx, Math.max(1, crackleEnd - at), track.n + 1);

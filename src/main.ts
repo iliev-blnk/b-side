@@ -13,9 +13,10 @@ import { generateEp } from "./band/ep.ts";
 import type { Mood } from "./band/types.ts";
 import { rng } from "./music/rng.ts";
 import { palette } from "./record/palette.ts";
-import { LOOKS, type LookName } from "./film/looks.ts";
-import { onTwos, render as renderFilm } from "./film/stage.ts";
-import { type Scene, street } from "./film/street.ts";
+import { deep } from "./film/looks.ts";
+import { onTwos } from "./film/stage.ts";
+import { draw as drawFilm, type Film, film as makeFilm } from "./film/film.ts";
+import { recordNo } from "./record/date.ts";
 
 const BASE = `${import.meta.env.BASE_URL}samples/`;
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
@@ -111,8 +112,8 @@ const w = window as unknown as {
   __still: (day: Day, t: number, width: number, height: number) => Promise<string>;
   __sleeve: (day: Day, size: number) => Promise<string>;
   __cuts: (day: Day) => { start: number; kind: string; comp: string }[];
-  __film: (day: Day, mood: Mood, look: LookName, t: number, width: number, height: number) => Promise<string>;
-  __filmInfo: (day: Day, mood: Mood) => { length: number; cuts: number[]; title: string };
+  __film: (day: Day, mood: Mood, t: number, width: number, height: number) => Promise<string>;
+  __filmInfo: (day: Day, mood: Mood) => unknown;
 };
 // __playing counts live schedules, so a test can catch two records playing at once
 w.__playing = 0;
@@ -224,27 +225,34 @@ w.__sleeve = async (day, size) => {
 };
 w.__cuts = (day) => new Episode(press(day)).cuts.map(({ start, kind, comp }) => ({ start, kind, comp }));
 
-const scenes = new Map<string, Scene>();
-function scene(day: Day, mood: Mood): Scene {
+const films = new Map<string, Film>();
+function filmOf(day: Day, mood: Mood): Film {
   const key = `${day}/${mood}`;
-  if (!scenes.has(key)) scenes.set(key, street(generateEp(day, mood).tracks[0]!));
-  return scenes.get(key)!;
+  if (!films.has(key)) films.set(key, makeFilm(generateEp(day, mood), { no: recordNo(day), day }));
+  return films.get(key)!;
 }
 let filmCanvas: HTMLCanvasElement | null = null;
-w.__film = async (day, mood, look, t, width, height) => {
+w.__film = async (day, mood, t, width, height) => {
   await fonts;
   filmCanvas ??= document.createElement("canvas");
   const c = filmCanvas;
   c.width = width;
   c.height = height;
-  const s = scene(day, mood);
+  const f = filmOf(day, mood);
   const pal = palette(rng(`b-side/${day}`).fork("palette"), mood);
-  renderFilm(c.getContext("2d")!, s.at(onTwos(t)), LOOKS[look](pal), Math.floor(onTwos(t) * 12));
-  return c.toDataURL("image/jpeg", 0.92);
+  drawFilm(c.getContext("2d")!, f.at(onTwos(t)), deep(pal), Math.floor(onTwos(t) * 12));
+  return c.toDataURL("image/jpeg", 0.9);
 };
 w.__filmInfo = (day, mood) => {
-  const s = scene(day, mood);
-  return { length: s.length, cuts: s.cuts, title: generateEp(day, mood).tracks[0]!.title };
+  const f = filmOf(day, mood);
+  return {
+    length: f.length,
+    titles: f.ep.tracks.map((t) => t.title),
+    band: f.cast.band,
+    prop: f.cast.prop,
+    weather: f.cast.weather,
+    shots: f.shots.map(({ scene, variant, into, n, start, end }) => ({ scene, variant, into, n, start, end })),
+  };
 };
 
 function route() {
