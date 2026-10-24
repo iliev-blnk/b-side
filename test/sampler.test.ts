@@ -1,14 +1,14 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { indexPack, nearestSample, type Manifest } from "../src/audio/samples.ts";
-import { swingBeat } from "../src/audio/play.ts";
-import { type PitchedPart, RANGES } from "../src/music/types.ts";
+import { type Pitched, RANGES } from "../src/band/types.ts";
+import { swingBeat } from "../src/band/time.ts";
 
 const manifest: Manifest = JSON.parse(readFileSync(new URL("../public/samples/manifest.json", import.meta.url), "utf8"));
 const index = indexPack(manifest);
 
 describe("nearestSample", () => {
-  for (const part of ["keys", "piano", "sax", "vibes", "harmonica"] as PitchedPart[]) {
+  for (const part of Object.keys(RANGES) as Pitched[]) {
     it(`${part} covers its whole range within 4 semitones`, () => {
       const [lo, hi] = RANGES[part];
       for (let m = lo; m <= hi; m++) {

@@ -1,11 +1,7 @@
-import { generate } from "../music/score.ts";
-import type { Mood, Part } from "../music/types.ts";
-import { createMaster } from "./master.ts";
-import { schedule } from "./play.ts";
 import { loadPack } from "./samples.ts";
 import { generateEp } from "../band/ep.ts";
 import { cutSeconds, GAP, LEAD } from "../band/side.ts";
-import type { Part as BandPart } from "../band/types.ts";
+import type { Mood, Part } from "../band/types.ts";
 import { partsOf, performTrack } from "./perform.ts";
 
 const SR = 44100;
@@ -63,12 +59,11 @@ function measure(buf: AudioBuffer) {
   return { peakDb: 20 * Math.log10(peak || 1e-9), rmsDb: 20 * Math.log10(rms || 1e-9) };
 }
 
-
 /**
  * Renders one track of a night's side through the same chain as live playback, including the
  * crackle up to the next track (or the run-out groove after the last). For scripts/render.mjs.
  */
-export async function renderTrack(seed: string, mood: Mood, n: number, base: string, only?: BandPart[]): Promise<Rendered & { title: string; style: string }> {
+export async function renderTrack(seed: string, mood: Mood, n: number, base: string, only?: Part[]): Promise<Rendered & { title: string; style: string }> {
   const track = generateEp(seed, mood).tracks[n]!;
   const seconds = cutSeconds(track);
   const ctx = new OfflineAudioContext(2, Math.ceil(seconds * SR), SR);
@@ -76,28 +71,4 @@ export async function renderTrack(seed: string, mood: Mood, n: number, base: str
   performTrack(ctx, pack, track, LEAD, ctx.destination, { tail: n < 2 ? GAP : 0, only });
   const buf = await ctx.startRendering();
   return { wav: base64(encodeWav(buf)), ...measure(buf), seconds, title: track.title, style: track.style };
-}
-
-/** Renders a theme through the same chain as live playback; used by scripts/render.mjs. */
-export async function renderOffline(seed: string, mood: Mood, base: string, only?: Part[]): Promise<Rendered> {
-  const full = generate(seed, mood);
-  // `only` renders a stem (used to balance the mix)
-  const score = only ? { ...full, events: full.events.filter((e) => only.includes(e.part)) } : full;
-  const seconds = score.lengthSec + 4;
-  const ctx = new OfflineAudioContext(2, Math.ceil(seconds * SR), SR);
-  const pack = await loadPack(ctx, base);
-  const master = createMaster(ctx, mood);
-  master.output.connect(ctx.destination);
-  schedule(ctx, pack, score, 0.05, master);
-  const buf = await ctx.startRendering();
-  let peak = 0;
-  let sum = 0;
-  for (let c = 0; c < buf.numberOfChannels; c++) {
-    for (const v of buf.getChannelData(c)) {
-      peak = Math.max(peak, Math.abs(v));
-      sum += v * v;
-    }
-  }
-  const rms = Math.sqrt(sum / (buf.length * buf.numberOfChannels));
-  return { wav: base64(encodeWav(buf)), peakDb: 20 * Math.log10(peak || 1e-9), rmsDb: 20 * Math.log10(rms || 1e-9), seconds };
 }

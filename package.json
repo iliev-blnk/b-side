@@ -13,7 +13,6 @@
     "preview": "vite preview",
     "samples": "node scripts/samples.mjs",
     "pitchcheck": "node scripts/pitchcheck.mjs",
-    "render": "node scripts/render.mjs",
     "smoke": "node scripts/smoke.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bassBuffer, crackleBuffer, kickBuffer } from "../src/audio/synth.ts";
+import { brushBuffer, crackleBuffer, kickBuffer } from "../src/audio/synth.ts";
 
 /** Just enough of BaseAudioContext for offline buffer synthesis. */
 function fakeCtx(sampleRate = 44100) {
@@ -27,10 +27,12 @@ function check(buf: AudioBuffer) {
 describe("synth", () => {
   it("makes a clean kick", () => check(kickBuffer(fakeCtx())));
 
-  it("makes bass notes across the range, the same for the same seed", () => {
+  it("makes brush sweeps and taps, the same every time", () => {
     const ctx = fakeCtx();
-    for (const m of [28, 33, 40, 48, 55]) check(bassBuffer(ctx, m, 1.2, 7));
-    expect(bassBuffer(ctx, 40, 1, 3).getChannelData(0)).toEqual(bassBuffer(ctx, 40, 1, 3).getChannelData(0));
+    for (const kind of ["sweep", "tap"] as const) {
+      check(brushBuffer(ctx, kind));
+      expect(brushBuffer(ctx, kind).getChannelData(0)).toEqual(brushBuffer(ctx, kind).getChannelData(0));
+    }
   });
 
   it("makes crackle", () => {

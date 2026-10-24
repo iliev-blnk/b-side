@@ -1,5 +1,5 @@
 import type { Rng } from "../music/rng.ts";
-import type { Mood } from "../music/types.ts";
+import type { Mood } from "../band/types.ts";
 
 /** The paper stock. Flat colours only; grain and light are added when drawn. */
 export const PAPER = {

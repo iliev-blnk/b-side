@@ -1,6 +1,5 @@
 import { rng } from "../music/rng.ts";
-import { generate } from "../music/score.ts";
-import type { Mood, Score } from "../music/types.ts";
+import type { Mood } from "../band/types.ts";
 import { type Day, LAUNCH, recordNo } from "./date.ts";
 import { type Palette, palette } from "./palette.ts";
 import { tracklist } from "./title.ts";
@@ -19,7 +18,6 @@ export interface Pressing {
   tracks: [string, string, string];
   palette: Palette;
   sleeve: SleeveLayout;
-  score: Score;
 }
 
 const MOOD_LIST: Mood[] = ["noir", "chase", "sad"];
@@ -38,7 +36,6 @@ function pressV1(day: Day): Pressing {
     tracks,
     palette: palette(r.fork("palette"), mood),
     sleeve: r.fork("sleeve").pick(SLEEVES),
-    score: generate(day, mood),
   };
 }
 

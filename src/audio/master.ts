@@ -1,4 +1,4 @@
-import type { Mood } from "../music/types.ts";
+import type { Mood } from "../band/types.ts";
 import { rng } from "../music/rng.ts";
 
 export interface Master {

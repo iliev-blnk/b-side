@@ -43,7 +43,7 @@ describe("dates", () => {
 });
 
 describe("titles", () => {
-  it("never produce a title from the show", () => {
+  it("never produce a blocked title", () => {
     for (const mood of ["noir", "chase", "sad"] as const) {
       const all = allTitles(mood);
       expect(all.size).toBeGreaterThan(300);

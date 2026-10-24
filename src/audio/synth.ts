@@ -25,50 +25,6 @@ export function kickBuffer(ctx: BaseAudioContext): AudioBuffer {
   return buf;
 }
 
-/**
- * An upright-ish bass note: Karplus–Strong string plucked with a soft (low-passed) noise burst,
- * a sine fundamental under it for weight, then a dark one-pole filter.
- */
-export function bassBuffer(ctx: BaseAudioContext, midi: number, seconds: number, seed: number): AudioBuffer {
-  const sr = ctx.sampleRate;
-  const f0 = 440 * 2 ** ((midi - 69) / 12);
-  const len = Math.floor(sr * (seconds + 0.12));
-  const buf = ctx.createBuffer(1, len, sr);
-  const out = buf.getChannelData(0);
-  const r = rng(`bass/${seed}/${midi}`);
-  const period = sr / f0;
-  const n = Math.floor(period);
-  const frac = period - n;
-  const line = new Float32Array(n + 2);
-  // soft pluck: smoothed noise
-  let s = 0;
-  for (let i = 0; i < line.length; i++) {
-    s += 0.35 * (r.next() * 2 - 1 - s);
-    line[i] = s;
-  }
-  const decay = 0.9965 - Math.max(0, midi - 40) * 0.0004;
-  let idx = 0;
-  let lp = 0;
-  let phase = 0;
-  for (let i = 0; i < len; i++) {
-    const a = line[idx]!;
-    const b = line[(idx + 1) % line.length]!;
-    const v = a * (1 - frac) + b * frac;
-    line[idx] = decay * 0.5 * (a + b);
-    idx = (idx + 1) % line.length;
-    const t = i / sr;
-    phase += (2 * Math.PI * f0) / sr;
-    const sub = Math.sin(phase) * Math.exp(-t * 2.2) * 0.6;
-    lp += 0.12 * (v + sub - lp);
-    // gate: short attack, release over the last 120 ms
-    const att = Math.min(1, t / 0.004);
-    const rel = t > seconds ? Math.max(0, 1 - (t - seconds) / 0.12) : 1;
-    out[i] = lp * att * rel;
-  }
-  normalize(out, 0.8);
-  return buf;
-}
-
 /** Vinyl surface: occasional pops, a bed of small ticks and a little hiss. */
 export function crackleBuffer(ctx: BaseAudioContext, seconds: number, seed: number): AudioBuffer {
   const sr = ctx.sampleRate;

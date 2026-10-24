@@ -1,5 +1,5 @@
 import type { Rng } from "../music/rng.ts";
-import type { Mood } from "../music/types.ts";
+import type { Mood } from "../band/types.ts";
 
 /**
  * Titles in the register of jazz standards and late-night films. Each mood has its own words; the

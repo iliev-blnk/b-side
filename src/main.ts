@@ -1,5 +1,5 @@
 import "@fontsource-variable/jost";
-import { renderOffline, renderTrack } from "./audio/offline.ts";
+import { renderTrack } from "./audio/offline.ts";
 import { partsOf } from "./audio/perform.ts";
 import { extendPack, loadPack, type Pack } from "./audio/samples.ts";
 import { generateEp } from "./band/ep.ts";
@@ -15,7 +15,6 @@ import { deck } from "./sit/deck.ts";
 import { Session } from "./sit/session.ts";
 import { decodeTake, emptyTake, type Take } from "./sit/take.ts";
 import { catalogue } from "./label/catalogue.ts";
-import { Episode } from "./visual/episode.ts";
 import { FONT } from "./visual/paper.ts";
 import { drawSleeve } from "./visual/sleeve.ts";
 
@@ -24,7 +23,6 @@ const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as
 const reduced = matchMedia("(prefers-reduced-motion: reduce)");
 const now = today();
 
-const KEYS: Record<string, string> = { piano: "piano", keys: "electric piano", sax: "tenor saxophone", vibes: "vibraphone", harmonica: "harmonica" };
 const fonts = Promise.all(["800", "600", "500", "400"].map((w) => document.fonts.load(`${w} 100px ${FONT}`)));
 
 function sleeveButton(p: Pressing, px: number): HTMLButtonElement {
@@ -124,11 +122,8 @@ let close: (() => void) | null = null;
 let token = 0;
 const w = window as unknown as {
   __playing: number;
-  __render: typeof renderOffline;
   __renderTrack: typeof renderTrack;
-  __still: (day: Day, t: number, width: number, height: number) => Promise<string>;
   __sleeve: (day: Day, size: number, type?: string) => Promise<string>;
-  __cuts: (day: Day) => { start: number; kind: string; comp: string }[];
   __film: (day: Day, mood: Mood, t: number, width: number, height: number) => Promise<string>;
   __filmInfo: (day: Day, mood: Mood) => unknown;
   __side: Session | null;
@@ -195,16 +190,7 @@ addEventListener("keydown", (e) => {
 
 // ---- hooks for scripts (stills, renders, smoke test) ----
 
-w.__render = renderOffline;
 w.__renderTrack = renderTrack;
-w.__still = async (day, t, width, height) => {
-  await fonts;
-  const c = document.createElement("canvas");
-  c.width = width;
-  c.height = height;
-  new Episode(press(day)).draw({ ctx: c.getContext("2d")!, w: width, h: height, u: Math.min(width, height) }, t);
-  return c.toDataURL("image/png");
-};
 w.__sleeve = async (day, size, type = "image/png") => {
   await fonts;
   const c = document.createElement("canvas");
@@ -212,7 +198,6 @@ w.__sleeve = async (day, size, type = "image/png") => {
   drawSleeve(c.getContext("2d")!, size, press(day));
   return c.toDataURL(type, 0.9);
 };
-w.__cuts = (day) => new Episode(press(day)).cuts.map(({ start, kind, comp }) => ({ start, kind, comp }));
 
 const films = new Map<string, Film>();
 function filmOf(day: Day, mood: Mood): Film {
@@ -241,6 +226,11 @@ w.__filmInfo = (day, mood) => {
     prop: f.cast.prop,
     weather: f.cast.weather,
     shots: f.shots.map(({ scene, variant, into, n, start, end }) => ({ scene, variant, into, n, start, end })),
+    // each tune's first head, when its title is set over the picture
+    heads: f.cues.map((c, n) => {
+      const h = c.sections.find((s) => s.kind === "head")!;
+      return { start: f.starts[n]! + h.t, end: f.starts[n]! + h.end };
+    }),
   };
 };
 

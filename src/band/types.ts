@@ -18,10 +18,10 @@ export const isDrum = (p: Part): p is Drum => (DRUMS as readonly string[]).inclu
 /** Playable range of each pitched part (MIDI, inclusive). The sample set covers all of it. */
 export const RANGES: Record<Pitched, [Midi, Midi]> = {
   bass: [28, 55],
-  piano: [36, 96],
+  piano: [36, 90],
   keys: [36, 84],
   sax: [44, 77],
-  trumpet: [52, 82],
+  trumpet: [54, 82],
   trombone: [40, 67],
   flute: [60, 93],
   clarinet: [50, 86],
